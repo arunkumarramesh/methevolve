@@ -33,14 +33,16 @@ propsites_bd$Group <- c("1.1","1.2","6","1.1","1.2","6")
 propsites_bd$Type <- c("All sites","All sites","All sites","gbM sites","gbM sites","gbM sites")
 total_bd <- c("n=10062950","n=9640492","n=8730867","n=905826","n=879235","n=835966")
 
-pdf(file="seg_sites_bd.pdf",height=3,width=3.5)
-ggplot(data=propsites_bd,aes(x=Type,y=Proportion,fill=Group)) +
+seg_sites_bd <- ggplot(data=propsites_bd,aes(x=Type,y=Proportion,fill=Group)) +
   geom_col(position = "dodge") +
   ylim(c(0,0.1)) +
   scale_fill_manual(values=c("#FDAE61","#ABDDA4","#2B83BA")) +
   geom_text(aes(x=c(0.7,1,1.3,1.7,2,2.3),angle=90,y = 0.085, label = total_bd)) +
   ylab("Proportion of polymorphic sites") +
   xlab("")
+
+pdf(file="seg_sites.pdf",height=3,width=8)
+plot_grid(seg_athaliana,seg_sites_bd,ncol=2,rel_widths = c(1.7,1),labels = "AUTO")
 dev.off()
 
 #### DAPC #### 
@@ -205,20 +207,22 @@ bd_frq_dmr <- bd_frq[bd_frq$Type %in% "DMR",]
 bd_frq_dmr$Group <- gsub("6",paste("6, n=",nrow(group6_dmr.frq),sep=""), bd_frq_dmr$Group)
 bd_frq_dmr$Group <- gsub("1.1",paste("1.1, n=",nrow(group1.1_dmr.frq),sep=""), bd_frq_dmr$Group)
 bd_frq_dmr$Group <- gsub("1.2",paste("1.2, n=",nrow(group1.2_dmr.frq),sep=""), bd_frq_dmr$Group)
+#Proportion of unmethylated alleles
+#Proportion of sites
 bd_smp_plot <- ggplot(bd_frq_smp, aes(x=N_CHR_binned, y=proportion, fill=Group)) +
   geom_bar(stat="identity", position="dodge") +
-  labs(x="Proportion of unmethylated alleles", y="Proportion of sites") +
+  labs(x="", y="") +
   theme_minimal()+
-  ggtitle("SMP") +
+  ggtitle("gbM\nSMP") +
   scale_fill_manual(values=c("#FDAE61","#ABDDA4","#2B83BA")) +
   theme(legend.title = element_blank(),legend.position = c(0.8, 0.95))
 bd_dmr_plot <- ggplot(bd_frq_dmr, aes(x=N_CHR_binned, y=proportion, fill=Group)) +
   geom_bar(stat="identity", position="dodge") +
-  labs(x="Proportion of unmethylated alleles", y="Proportion of sites") +
+  labs(x="", y="") +
   theme_minimal()+
-  ggtitle("DMR") +
+  ggtitle("gbM\nDMR") +
   scale_fill_manual(values=c("#FDAE61","#ABDDA4","#2B83BA")) +
-  theme(legend.title = element_blank(),legend.position = c(0.8, 0.95))
+  theme(legend.title = element_blank(),legend.position = c(0.5, 0.99))
 
 pdf(file="brachypodium_mSFS.pdf",width=6,height=3.5)
 plot_grid(bd_smp_plot,bd_dmr_plot,ncol=2)
@@ -273,22 +277,27 @@ bd_nongbm_frq_dmr$Group <- gsub("1.1",paste("1.1, n=",nrow(group1.1_dmr_nongbm.f
 bd_nongbm_frq_dmr$Group <- gsub("1.2",paste("1.2, n=",nrow(group1.2_dmr_nongbm.frq),sep=""), bd_nongbm_frq_dmr$Group)
 bd_smp_nongbm_plot <- ggplot(bd_nongbm_frq_smp, aes(x=N_CHR_binned, y=proportion, fill=Group)) +
   geom_bar(stat="identity", position="dodge") +
-  labs(x="Proportion of unmethylated alleles", y="Proportion of sites") +
+  labs(x="", y="") +
   theme_minimal()+
-  ggtitle("SMP") +
+  ggtitle("non-gbM\nSMP") +
   scale_fill_manual(values=c("#FDAE61","#ABDDA4","#2B83BA")) +
   theme(legend.title = element_blank(),legend.position = c(0.8, 0.95))
 bd_dmr_nongbm_plot <- ggplot(bd_nongbm_frq_dmr, aes(x=N_CHR_binned, y=proportion, fill=Group)) +
   geom_bar(stat="identity", position="dodge") +
-  labs(x="Proportion of unmethylated alleles", y="Proportion of sites") +
+  labs(x="", y="") +
   theme_minimal()+
-  ggtitle("DMR") +
+  ggtitle("non-gbM\nDMR") +
   scale_fill_manual(values=c("#FDAE61","#ABDDA4","#2B83BA")) +
-  theme(legend.title = element_blank(),legend.position = c(0.4, 0.95))
+  theme(legend.title = element_blank(),legend.position = c(0.7, 1.05))
 
-pdf(file="brachypodium_mSFS_nongbm.pdf",width=6,height=3.5)
-plot_grid(bd_smp_nongbm_plot,bd_dmr_nongbm_plot,ncol=2)
+y.grob_bd <- textGrob("Proportion of sites", gp=gpar(fontface="bold", col="black", fontsize=10), rot=90)
+x.grob_bd <- textGrob("Proportion of unmethylated alleles", gp=gpar(fontface="bold", col="black", fontsize=10))
+
+bd_sfs_plots <- plot_grid(bd_smp_plot,bd_smp_nongbm_plot,bd_dmr_plot,bd_dmr_nongbm_plot,ncol=4)
+pdf(file="bd_sfs.pdf",height=4.5,width=10)
+grid.arrange(arrangeGrob(bd_sfs_plots, left = y.grob, bottom = x.grob))
 dev.off()
+
 
 #### LD ####
 
@@ -314,56 +323,29 @@ pdf("LD_brachypodium.pdf",height=2.5,width = 3.5)
 bd_ld_decay_plot
 dev.off()
 
+pdf("LD.pdf",height=3,width = 9)
+plot_grid(ld_decay_plot,bd_ld_decay_plot,labels=c("A","B"),ncol=2,rel_widths = c(2,1))
+dev.off()
 
-#### DMR sizes ####
+#### DMR lengths ####
 
 ## brachypodium
 
-bd_dmrs_1 <- read.table(file="dmr_length_grp1.txt",header=T)
-bd_dmrs_6 <- read.table(file="dmr_length_grp6.txt",header=T)
-bd_dmrs <- rbind(bd_dmrs_1,bd_dmrs_6)
-bd_dmrs <- bd_dmrs[!duplicated(bd_dmrs),]
-group1.1_dmr <- read.table(file="dmr1.1_gbm_maf10.frq",row.names = NULL, header = T)
-group1.2_dmr <- read.table(file="dmr1.2_gbm_maf10.frq",row.names = NULL, header = T)
-group6_dmr <- read.table(file="dmr6_gbm_maf10.frq",row.names = NULL, header = T)
-dmrs_all <- rbind(group1.1_dmr,group1.2_dmr,group6_dmr)
-bd_dmrs$ID <- paste(bd_dmrs$seqnames,bd_dmrs$middle,sep="_")
-bd_dmrs <- bd_dmrs[bd_dmrs$ID %in% paste(dmrs_all$row.names,dmrs_all$CHROM,sep="_"),]
-bd_dmrs <- bd_dmrs[c(1:3,5)]
-bd_dmrs$Species <- "B. distachyon"
+bd_dmrs <- read.table(file="bd_dmrs_lengths.txt",header=T)
+bd_dmrs <- bt_dmrs[!duplicated(bd_dmrs),]
+bd_dmrs <- bd_dmrs[!is.na(bd_dmrs$lth),]
+colnames(bd_dmrs)[1] <- "length"
 
 ## arabidopsis thaliana
-regions <- read.table(file="popgen5mb.bed")
-dmrs_ceu <- read.table(file="10020.trim_methylome_CG.txt",header=T)
-dmrs_ceu <- dmrs_ceu[1:3]
-dmrs_ceu$size <- dmrs_ceu$end - dmrs_ceu$start
-dmrs_ceu <- dmrs_ceu[!((dmrs_ceu$seqnames %in% "1") & (dmrs_ceu$start < regions$V2[1])),]
-dmrs_ceu <- dmrs_ceu[!((dmrs_ceu$seqnames %in% "1") & (dmrs_ceu$end > regions$V3[1])),]
-dmrs_ceu <- dmrs_ceu[!((dmrs_ceu$seqnames %in% "2") & (dmrs_ceu$start < regions$V2[2])),]
-dmrs_ceu <- dmrs_ceu[!((dmrs_ceu$seqnames %in% "2") & (dmrs_ceu$end > regions$V3[2])),]
-dmrs_ceu <- dmrs_ceu[!((dmrs_ceu$seqnames %in% "3") & (dmrs_ceu$start < regions$V2[3])),]
-dmrs_ceu <- dmrs_ceu[!((dmrs_ceu$seqnames %in% "3") & (dmrs_ceu$end > regions$V3[3])),]
-dmrs_ceu <- dmrs_ceu[!((dmrs_ceu$seqnames %in% "4") & (dmrs_ceu$start < regions$V2[4])),]
-dmrs_ceu <- dmrs_ceu[!((dmrs_ceu$seqnames %in% "4") & (dmrs_ceu$end > regions$V3[4])),]
-dmrs_ceu <- dmrs_ceu[!((dmrs_ceu$seqnames %in% "5") & (dmrs_ceu$start < regions$V2[5])),]
-dmrs_ceu <- dmrs_ceu[!((dmrs_ceu$seqnames %in% "5") & (dmrs_ceu$end > regions$V3[5])),]
-dmrs_ibnr <- read.table(file="9950.trim_methylome_CG.txt",header=T)
-dmrs_ibnr <- dmrs_ibnr[1:3]
-dmrs_ibnr$size <- dmrs_ibnr$end - dmrs_ibnr$start
-dmrs_ibnr <- dmrs_ibnr[!((dmrs_ibnr$seqnames %in% "1") & (dmrs_ibnr$start < regions$V2[1])),]
-dmrs_ibnr <- dmrs_ibnr[!((dmrs_ibnr$seqnames %in% "1") & (dmrs_ibnr$end > regions$V3[1])),]
-dmrs_ibnr <- dmrs_ibnr[!((dmrs_ibnr$seqnames %in% "2") & (dmrs_ibnr$start < regions$V2[2])),]
-dmrs_ibnr <- dmrs_ibnr[!((dmrs_ibnr$seqnames %in% "2") & (dmrs_ibnr$end > regions$V3[2])),]
-dmrs_ibnr <- dmrs_ibnr[!((dmrs_ibnr$seqnames %in% "3") & (dmrs_ibnr$start < regions$V2[3])),]
-dmrs_ibnr <- dmrs_ibnr[!((dmrs_ibnr$seqnames %in% "3") & (dmrs_ibnr$end > regions$V3[3])),]
-dmrs_ibnr <- dmrs_ibnr[!((dmrs_ibnr$seqnames %in% "4") & (dmrs_ibnr$start < regions$V2[4])),]
-dmrs_ibnr <- dmrs_ibnr[!((dmrs_ibnr$seqnames %in% "4") & (dmrs_ibnr$end > regions$V3[4])),]
-dmrs_ibnr <- dmrs_ibnr[!((dmrs_ibnr$seqnames %in% "5") & (dmrs_ibnr$start < regions$V2[5])),]
-dmrs_ibnr <- dmrs_ibnr[!((dmrs_ibnr$seqnames %in% "5") & (dmrs_ibnr$end > regions$V3[5])),]
+dmrs_ceu <- read.table(file="ceu_dmrs_lengths.txt",header=T)
+#dmrs_ceu$Pop <- "CEU"
+dmrs_ibnr <- read.table(file="ibnr_dmrs_lengths.txt",header=T)
+#dmrs_ibnr$Pop <- "IBnr"
 at_dmrs <- rbind(dmrs_ceu,dmrs_ibnr)
 at_dmrs <- at_dmrs[!duplicated(at_dmrs),]
-colnames(at_dmrs)[4] <- "length"
+colnames(at_dmrs)[2] <- "length"
 at_dmrs$Species <- "A. thaliana"
+at_dmrs <- at_dmrs[2:3]
 at_bd_dmrs <- rbind(at_dmrs,bd_dmrs)
 mean(bd_dmrs$length)
 mean(at_dmrs$length)
@@ -425,7 +407,7 @@ pdf("pi_bd.pdf",height=3,width=3)
 ggplot(data=Dm_bd,aes(x=Type,y=log10(pi),fill=group)) +
   geom_boxplot() +
   xlab("") +
-  ylab(expression('log'[10]*'(Scaled '*pi*')')) +
+  ylab(expression('log'[10]*'(Scaled '*pi[SMP]*')')) +
   ylim(-5,0.5) +
   theme(legend.position="top") +
   scale_fill_manual("Clonal group",values=c("#FDAE61","#ABDDA4","#2B83BA"))+
@@ -441,7 +423,7 @@ pdf("D_bd.pdf",height=3,width=3)
 ggplot(data=Dm_bd,aes(x=Type,y=Dm,fill=group)) +
   geom_boxplot() +
   xlab("") +
-  ylab(expression("Tajima's "*italic('D'))) +
+  ylab(expression(italic('D')[SMP])) +
   theme(legend.position="none") +
   scale_fill_manual("Clonal group",values=c("#FDAE61","#ABDDA4","#2B83BA")) +
   geom_text(data = df_bd_pi_gene, aes(x=c(0.75,1,1.25,1.75,2,2.25),y = 5, label = c("e","bc","c","d","a","ab")))
@@ -449,12 +431,12 @@ dev.off()
 
 D_bd_group1 <- inner_join(Dm_1.1[c(3:6,8:10)],Dm_1.2[c(3:6,8:10)],by="region")
 pa_gbm_bd <- ggscatter(data=D_bd_group1[D_bd_group1$Type.x %in% "gbM",],x="Dm.x",y="Dm.y", shape = 21, add = "reg.line",  conf.int = TRUE, cor.coef = T,cor.coef.coord = c(-3, 4),size=1) +
-  xlab(expression("Group 1.1 Tajima's "*italic('D'))) +
-  ylab(expression("Group 1.2 Tajima's "*italic('D'))) +
+  xlab(expression("Group 1.1 "*italic('D')[SMP])) +
+  ylab(expression("Group 1.2 "*italic('D')[SMP])) +
   geom_abline(intercept = 0, color="blue",linetype = "dashed")
 pb_gbm_bd <- ggscatter(data=D_bd_group1[D_bd_group1$Type.x %in% "gbM",],x="theta_pi.x",y="theta_pi.y", shape = 21, add = "reg.line",  conf.int = TRUE, cor.coef = T,size=1) +
-  xlab(expression(paste("Group 1.1 ",pi))) +
-  ylab(expression(paste("Group 1.2 ",pi))) +
+  xlab(expression(paste("Group 1.1 ",pi[SMP]))) +
+  ylab(expression(paste("Group 1.2 ",pi[SMP]))) +
   geom_abline(intercept = 0, color="blue",linetype = "dashed")
 pc_gbm_bd <- ggscatter(data=D_bd_group1[D_bd_group1$Type.x %in% "gbM",],x="segregation_sites.x",y="segregation_sites.y", shape = 21, add = "reg.line",  conf.int = TRUE, cor.coef = T,size=1) +
   xlab("Group 1.1 number of segregating sites") +
