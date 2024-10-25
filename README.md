@@ -2,7 +2,8 @@
 
 This repository contains the scripts for the following paper:
 
-Kevin Korfmann, Andreas Zauchner, Bing Huo, Corinna Grüenke, Yitong Wang, Aurélien Tellier, Ramesh Arunkumar. Methylomes Reveal Population Subdivision and Recent Expansions in Plant Populations.
+Kevin Korfmann, Andreas Zauchner, Bing Huo, Corinna Grünke, Yitong Wang, Aurélien Tellier, Ramesh Arunkumar. Methylomes reveal recent evolutionary changes in populations of two plant species.
+
 
 List of scripts included in this repository:
 
