@@ -29,14 +29,13 @@ propsites$Type <- c("All methylation sites","Clocklike methylation sites","Codin
 total <- c("n=17022694","n=14585335","n=1535297","n=299964","n=17022694","n=14585335","n=3588665","n=701123")
 propsites$Type <- factor(propsites$Type,levels=c("Coding nucleotides","Non-coding nucleotides","All methylation sites","Clocklike methylation sites"))
 
-pdf(file="seg_sites.pdf",height=3,width=6)
-ggplot(data=propsites,aes(x=Population,y=Proportion,fill=Type)) +
+seg_athaliana <- ggplot(data=propsites,aes(x=Population,y=Proportion,fill=Type)) +
   geom_col(position = "dodge") +
   ylim(c(0,0.5)) +
   scale_fill_manual(values=c("black","grey","brown","darkgreen")) +
   geom_text(aes(x=c(seq(0.7,1.3,0.2),seq(1.7,2.3,0.2)),angle=90,y = 0.43, label = total)) +
   ylab("Proportion of polymorphic sites")
-dev.off()
+
 
 #### pi ####
 
@@ -247,8 +246,8 @@ pi_ceu_smp <- ceu_smps_genes[c(8,6)]
 colnames(pi_ceu_smp)[2] <- "pi_SMP"
 pi_ceu_snp_smp <- inner_join(pi_ceu_snp,pi_ceu_smp,by="interval")
 ceu_pi_compare <- ggscatter(data=pi_ceu_snp_smp,x="pi_SNP",y="pi_SMP", shape = 21, cor.coef = T,cor.coef.coord = c(0.000005, 0.01),title = paste("CEU, n=", nrow(pi_ceu_snp_smp),sep=""),size=1) +
-  xlab(expression(paste("Genic ",pi))) +
-  ylab(expression(paste("SMP ",pi)))
+  xlab(expression(pi[SNP])) +
+  ylab(expression(pi[SMP]))
 
 pi_ibnr_snp <- ibnr_snps_genes[c(1,3)]
 colnames(pi_ibnr_snp)[2] <- "pi_SNP"
@@ -256,8 +255,8 @@ pi_ibnr_smp <- ibnr_smps_genes[c(8,6)]
 colnames(pi_ibnr_smp)[2] <- "pi_SMP"
 pi_ibnr_snp_smp <- inner_join(pi_ibnr_snp,pi_ibnr_smp,by="interval")
 ibnr_pi_compare <- ggscatter(data=pi_ibnr_snp_smp,x="pi_SNP",y="pi_SMP", shape = 21, cor.coef = T,cor.coef.coord = c(0.000005, 0.015),title = paste("IBnr, n=", nrow(pi_ibnr_snp_smp),sep=""),size=1) +
-  xlab(expression(paste("Genic ",pi))) +
-  ylab(expression(paste("SMP ",pi)))
+  xlab(expression(pi[SNP])) +
+  ylab(expression(pi[SMP]))
 
 pi_plot <- plot_grid(pi_gene_plot,plot_grid(ceu_pi_compare,ibnr_pi_compare,ncol=1),ncol=2,rel_widths = c(2,1),labels = c("A","C"))
 
@@ -320,8 +319,8 @@ D_ceu_smp <- ceu_smps_genes[c(8,4)]
 colnames(D_ceu_smp)[2] <- "D_SMP"
 D_ceu_snp_smp <- inner_join(D_ceu_snp,D_ceu_smp,by="interval")
 ceu_D_compare <- ggscatter(data=D_ceu_snp_smp,x="D_SNP",y="D_SMP", shape = 21, cor.coef = T,cor.coef.coord = c(-2, 4),title = paste("CEU, n=", nrow(D_ceu_snp_smp),sep=""),size=1) + 
-  xlab(expression("Genic Tajima's "*italic('D'))) +
-  ylab(expression("SMP Tajima's "*italic('D')))
+  xlab(expression(italic('D')[SNP])) +
+  ylab(expression(italic('D')[SMP]))
 
 D_ibnr_snp <- ibnr_snps_genes[c(1,2)]
 colnames(D_ibnr_snp)[2] <- "D_SNP"
@@ -329,8 +328,8 @@ D_ibnr_smp <- ibnr_smps_genes[c(8,4)]
 colnames(D_ibnr_smp)[2] <- "D_SMP"
 D_ibnr_snp_smp <- inner_join(D_ibnr_snp,D_ibnr_smp,by="interval")
 ibnr_D_compare <- ggscatter(data=D_ibnr_snp_smp,x="D_SNP",y="D_SMP", shape = 21, cor.coef = T,cor.coef.coord = c(-2, 4),title = paste("IBnr, n=", nrow(D_ibnr_snp_smp),sep=""),size=1) + 
-  xlab(expression("Genic Tajima's "*italic('D'))) +
-  ylab(expression("SMP Tajima's "*italic('D')))
+  xlab(expression(italic('D')[SNP])) +
+  ylab(expression(italic('D')[SMP]))
 
 D_plot <- plot_grid(D_gene_plot,plot_grid(ceu_D_compare,ibnr_D_compare,ncol=1),ncol=2,rel_widths = c(2,1),labels = c("B","D"))
 
@@ -341,24 +340,24 @@ dev.off()
 smps_cg_all <- inner_join(ceu_smps_cg[c(3:6,8:9)],ibnr_smps_cg[c(3:6,8:9)],by="interval")
 smps_genes_all <- inner_join(ceu_smps_genes[c(3:6,8:9)],ibnr_smps_genes[c(3:6,8:9)],by="interval")
 pa <- ggscatter(data=smps_genes_all,x="D.x",y="D.y", shape = 21, add = "reg.line",  conf.int = TRUE, cor.coef = T,cor.coef.coord = c(-1, 2.5),title = paste("Coding region, n=", nrow(smps_genes_all),sep=""),size=1) +
-  xlab(expression("CEU Tajima's "*italic('D'))) +
-  ylab(expression("IBnr Tajima's "*italic('D'))) +
+  xlab(expression("CEU "*italic('D')[SMP])) +
+  ylab(expression("IBnr "*italic('D')[SMP])) +
   geom_abline(intercept = 0, color="blue",linetype = "dashed")
 pb <- ggscatter(data=smps_genes_all,x="pi.x",y="pi.y", shape = 21, add = "reg.line",  conf.int = TRUE, cor.coef = T,title = paste("Coding region, n=", nrow(smps_genes_all),sep=""),size=1) +
-  xlab(expression(paste("CEU ",pi))) +
-  ylab(expression(paste("IBnr ",pi))) +
+  xlab(expression(paste("CEU ",pi[SMP]))) +
+  ylab(expression(paste("IBnr ",pi[SMP]))) +
   geom_abline(intercept = 0, color="blue",linetype = "dashed")
 pc <- ggscatter(data=smps_genes_all,x="segregation_site.x",y="segregation_site.y", shape = 21, add = "reg.line",  conf.int = TRUE, cor.coef = T,title = paste("Coding region, n=", nrow(smps_genes_all),sep=""),size=1) +
   xlab("CEU number of segregating sites") +
   ylab("IBnr number of segregating sites") +
   geom_abline(intercept = 0, color="blue",linetype = "dashed")
 pd <- ggscatter(data=smps_cg_all,x="D.x",y="D.y", shape = 21, add = "reg.line",  conf.int = TRUE, cor.coef = T,cor.coef.coord = c(-1.5, 2.5),title = paste("Clocklike region, n=", nrow(smps_cg_all),sep=""),size=1) +
-  xlab(expression("CEU Tajima's "*italic('D'))) +
-  ylab(expression("IBnr Tajima's "*italic('D'))) +
+  xlab(expression("CEU "*italic('D')[SMP])) +
+  ylab(expression("IBnr "*italic('D')[SMP])) +
   geom_abline(intercept = 0, color="blue",linetype = "dashed")
 pe <- ggscatter(data=smps_cg_all,x="pi.x",y="pi.y", shape = 21, add = "reg.line",  conf.int = TRUE, cor.coef = T,title = paste("Clocklike region, n=", nrow(smps_cg_all),sep=""),size=1) +
-  xlab(expression(paste("CEU ",pi))) +
-  ylab(expression(paste("IBnr ",pi))) +
+  xlab(expression(paste("CEU ",pi[SMP]))) +
+  ylab(expression(paste("IBnr ",pi[SMP]))) +
   geom_abline(intercept = 0, color="blue",linetype = "dashed")
 pf <- ggscatter(data=smps_cg_all,x="segregation_site.x",y="segregation_site.y", shape = 21, add = "reg.line",  conf.int = TRUE, cor.coef = T,title = paste("Clocklike region, n=", nrow(smps_cg_all),sep=""),size=1) +
   xlab("CEU number of segregating sites") +
@@ -562,7 +561,8 @@ dmrs.frq <- dmrs.frq %>%
   dplyr::summarise(count = n(), .groups = 'drop') %>%
   dplyr::group_by(Population) %>%
   dplyr::mutate(proportion = count / sum(count))
-dmrs.frq$N_CHR_binned <- c(seq(0.04,0.96,0.04),seq(0.04,0.96,0.04))
+#dmrs.frq$N_CHR_binned <- c(seq(0.04,0.96,0.04),seq(0.04,0.96,0.04))
+dmrs.frq$N_CHR_binned <- (as.numeric(gsub("\\)|\\]","", gsub(".*,","", dmrs.frq$N_CHR_binned))) + as.numeric(gsub("\\[","", gsub(",.*","", dmrs.frq$N_CHR_binned))) ) / 2
 dmrs.frq.plot <- ggplot(dmrs.frq, aes(x=N_CHR_binned, y=proportion, fill=Population)) +
   geom_bar(stat="identity", position="dodge") +
   labs(x="", y="")  +
@@ -808,7 +808,12 @@ low_sift_dmrs.frq <- low_sift_dmrs.frq %>%
   dplyr::summarise(count = n(), .groups = 'drop') %>%
   dplyr::group_by(Population) %>%
   dplyr::mutate(proportion = count / sum(count))
+low_sift_dmrs.frq <- rbind(as.data.frame(low_sift_dmrs.frq),c("CEU","[0.74,0.78)",0,0))
+low_sift_dmrs.frq <- rbind(as.data.frame(low_sift_dmrs.frq),c("IBnr","[0.54,0.58)",0,0))
+low_sift_dmrs.frq <- low_sift_dmrs.frq[order(low_sift_dmrs.frq$Population,low_sift_dmrs.frq$N_CHR_binned),]
 low_sift_dmrs.frq$N_CHR_binned <- c(seq(0.04,0.96,0.04),seq(0.04,0.96,0.04))
+low_sift_dmrs.frq$proportion <- as.numeric(low_sift_dmrs.frq$proportion)
+low_sift_dmrs.frq$count <- as.numeric(low_sift_dmrs.frq$count)
 low_sift_dmrs.frq.plot <- ggplot(low_sift_dmrs.frq, aes(x=N_CHR_binned, y=proportion, fill=Population)) +
   geom_bar(stat="identity", position="dodge") +
   labs(x="", y="") +
@@ -992,9 +997,9 @@ LD_DMR_block_plot <- ggplot(data=ld_dmr,aes(x=Population,y=log10(Size),fill=Type
   scale_fill_manual(values=c("purple","gold"))
   #geom_text(data = df_thaliana_ld_dmr,aes(y = log10(160000)+0.5,x=c(0.8,1.2,1.8,2.2),label = n))
 
-pdf("LD.pdf",height=2.5,width = 8.3)
-plot_grid(ld_decay_plot,LD_DMR_block_plot,labels=c("A","B"),rel_widths = c(2.3,1),ncol=2)
-dev.off()
+#pdf("LD.pdf",height=2.5,width = 8.3)
+#dev.off()
+#plot_grid(ld_decay_plot,LD_DMR_block_plot,labels=c("A","B"),rel_widths = c(2.3,1),ncol=1)
 
 #### tree  ####
 
