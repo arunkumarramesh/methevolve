@@ -503,79 +503,141 @@ exportMethylome(model, filename = filename)
 #move methylome files to /methylome/ folder
 
 # run jDMR
-setwd("C:/Users/Excellaptop/Desktop/data/methylomes/") # important for samplefile
+library("methimpute",lib.loc="/data/proj2/home/users/a.ramesh/R/x86_64-redhat-linux-gnu-library/4.3/")
+library("jDMR",lib.loc="/data/proj2/home/users/a.ramesh/R/x86_64-redhat-linux-gnu-library/4.3/")
+library(Biostrings)
+library(data.table)
 
-out.dir <- "C:/Users/Excellaptop/Desktop/data/jDMRresults/"
-fasta <- "C:/Users/Excellaptop/Desktop/data/GCF_000005505.3_Brachypodium_distachyon_v3.0_genomic_chromnames_rmscaff.fna" 
-# chromosome names/headers must be something like ">chr1" or ">NC_016132.3" and consistent between all files
-# unlocalized scaffolds were removed so only chromosomes (+ plastid) remain
+out.dir <- "jDMRresults/"
 
-samplefile <- "C:/Users/Excellaptop/Desktop/data/samplefile1.fn" # col1: "BdTr11i_methylome.txt" col2: "BdTR11i"
-fread(samplefile, header = TRUE)
+myfasta <- readDNAStringSet("GCF_000005505.3_Brachypodium_distachyon_v3.0_genomic_chromnames_rmscaff.fna")
+CfromFASTAv4(fasta = myfasta, chr = "NC_016131.3", out.dir = out.dir, write.output = TRUE)
+ref.genome <- fread(paste0(out.dir, "/cytosine_positions_chr", "NC_016131.3", ".csv", sep = ""))
+makeReg(ref.genome = ref.genome, contexts = c("CG"), makeRegnull = c(FALSE), chr = "NC_016131.3", min.C = 8, N.boot = 10^5, N.sim.C = "all", fp.rate = 0.01, set.tol = 0.01, out.dir = out.dir, out.name = "Arabidopsis")
 
-runjDMRregions(fasta.file = fasta, out.dir = out.dir, samplefiles = samplefile, genome = "Brachypodium_distachyon", contexts = "CG")
+myfasta <- readDNAStringSet("GCF_000005505.3_Brachypodium_distachyon_v3.0_genomic_chromnames_rmscaff.fna")
+CfromFASTAv4(fasta = myfasta, chr = "NC_016132.3", out.dir = out.dir, write.output = TRUE)
+ref.genome <- fread(paste0(out.dir, "/cytosine_positions_chr", "NC_016132.3", ".csv", sep = ""))
+makeReg(ref.genome = ref.genome, contexts = c("CG"), makeRegnull = c(FALSE), chr = "NC_016132.3", min.C = 8, N.boot = 10^5, N.sim.C = "all", fp.rate = 0.01, set.tol = 0.01, out.dir = out.dir, out.name = "Arabidopsis")
+
+myfasta <- readDNAStringSet("GCF_000005505.3_Brachypodium_distachyon_v3.0_genomic_chromnames_rmscaff.fna")
+CfromFASTAv4(fasta = myfasta, chr = "NC_016133.3", out.dir = out.dir, write.output = TRUE)
+ref.genome <- fread(paste0(out.dir, "/cytosine_positions_chr", "NC_016133.3", ".csv", sep = ""))
+makeReg(ref.genome = ref.genome, contexts = c("CG"), makeRegnull = c(FALSE), chr = "NC_016133.3", min.C = 8, N.boot = 10^5, N.sim.C = "all", fp.rate = 0.01, set.tol = 0.01, out.dir = out.dir, out.name = "Arabidopsis")
+
+myfasta <- readDNAStringSet("GCF_000005505.3_Brachypodium_distachyon_v3.0_genomic_chromnames_rmscaff.fna")
+CfromFASTAv4(fasta = myfasta, chr = "NC_016134.3", out.dir = out.dir, write.output = TRUE)
+ref.genome <- fread(paste0(out.dir, "/cytosine_positions_chr", "NC_016134.3", ".csv", sep = ""))
+makeReg(ref.genome = ref.genome, contexts = c("CG"), makeRegnull = c(FALSE), chr = "NC_016134.3", min.C = 8, N.boot = 10^5, N.sim.C = "all", fp.rate = 0.01, set.tol = 0.01, out.dir = out.dir, out.name = "Arabidopsis")
+
+myfasta <- readDNAStringSet("GCF_000005505.3_Brachypodium_distachyon_v3.0_genomic_chromnames_rmscaff.fna")
+CfromFASTAv4(fasta = myfasta, chr = "NC_016135.3", out.dir = out.dir, write.output = TRUE)
+ref.genome <- fread(paste0(out.dir, "/cytosine_positions_chr", "NC_016135.3", ".csv", sep = ""))
+makeReg(ref.genome = ref.genome, contexts = c("CG"), makeRegnull = c(FALSE), chr = "NC_016135.3", min.C = 8, N.boot = 10^5, N.sim.C = "all", fp.rate = 0.01, set.tol = 0.01, out.dir = out.dir, out.name = "Arabidopsis")
 
 
-regionfile <- dget("C:/Users/Excellaptop/Desktop/data/jDMRresults/Brachypodium_distachyon_regions_chrNC_016132.3_CG.Rdata")
-regionfile$reg.obs
+runMethimputeRegions(out.dir = out.dir, samplefiles = "samplefiles", genome = "B_dist", context = "CG", nCytosines=8, mincov=3, Regionfiles = out.dir)
 ```
 
 20. Make vcf from jDMR results
 ```
-library(data.table)
-library(stringr)
+library(dplyr)
 
-sample <- read.table(file="samplefile30.fn", header = TRUE)
-sample <- sample[,1]
-sample <- gsub(".txt", "_CG.txt", sample)
+filenames <- read.table(file="../samplefiles",header = T)
+filenames$file <- gsub("_methylome.txt","_methylome.txt_CG.txt",filenames$file)
+dmrs <- read.table(file=filenames[1,1],header=T)
+dmrs <- dmrs[!duplicated(dmrs),]
+dmrs[dmrs$posteriorMax < 0.99,]$status <- NA
+gt <- dmrs$status
+gt <- gsub("U",0,gt)
+gt <- gsub("M",1,gt)
+gt[is.na(gt)] <- "."
+gt <- as.data.frame(gt)
+gt2 <- gt
+gt2$gt <- paste(gt2$gt,gt2$gt,sep = "|")
+colnames(gt)[1] <- filenames[1,2]
+colnames(gt2)[1] <- filenames[1,2]
+lth <- dmrs$end - dmrs$start
+dmrs$start <- round((dmrs$start + dmrs$end)/2)
+dmrs$end <- paste(dmrs$seqnames,dmrs$start,sep="_")
+dmrs <- dmrs[3]
+colnames(dmrs) <- "ID"
+dmrs$ID <- gsub("NC_01613","",dmrs$ID)
+dmrs$ID <- gsub("\\.3","",dmrs$ID)
+lengths <- as.data.frame(cbind(dmrs,lth))
+dmrs_dip <- cbind(dmrs,gt2)
+dmrs <- cbind(dmrs,gt)
 
-setwd("C:/Users/Excellaptop/Desktop/data/jDMRresults/")
-
-s <- fread(input = sample[1])
-name <- gsub("_methylome_CG.txt", "", sample[1])
-s[s$posteriorMax<0.99]$status <- "NA"
-s <- s[,-c(5,7)]
-colnames(s)[5] <- name
-s2 <- s
-
-
-
-for (i in 2:length(sample)){
-  s1 <- fread(input = sample[i])
-  name <- gsub("_methylome_CG.txt", "", sample[i])
-  s1[s1$posteriorMax<0.99]$status <- NA
-  s1 <- s1[,-c(5,7)]
-  colnames(s1)[5] <- name
-  s1 <- s1[,c(2,5)]
-  s2 <- full_join(s2, s1, by = "start", relationship = "many-to-many")
+for (i in 2:nrow(filenames)){
+  print(i)
+  dmrs_tmp <- read.table(file=filenames[i,1],header=T)
+  dmrs_tmp <- dmrs_tmp[!duplicated(dmrs_tmp),]
+  lth <- dmrs_tmp$end - dmrs_tmp$start
+  dmrs_tmp$start <- round((dmrs_tmp$start + dmrs_tmp$end)/2)
+  dmrs_tmp$end <- paste(dmrs_tmp$seqnames,dmrs_tmp$start,sep="_")
+  ID <- dmrs_tmp$end
+  lengths <- rbind(lengths,as.data.frame(cbind(ID,lth)))
+  gt <- dmrs_tmp$status
+  gt <- gsub("U",0,gt)
+  gt <- gsub("M",1,gt)
+  gt[is.na(gt)] <- "."
+  gt <- as.data.frame(gt)
+  gt2 <- gt
+  gt2$gt <- paste(gt2$gt,gt2$gt,sep = "|")
+  colnames(gt)[1] <- filenames[i,2]
+  colnames(gt2)[1] <- filenames[i,2]
+  gt <- cbind(gt,dmrs_tmp$end)
+  colnames(gt)[2] <- "ID"
+  gt$ID <- gsub("NC_01613","",gt$ID)
+  gt$ID <- gsub("\\.3","",gt$ID)
+  gt2 <- cbind(gt2,dmrs_tmp$end)
+  colnames(gt2)[2] <- "ID"
+  gt2$ID <- gsub("NC_01613","",gt2$ID)
+  gt2$ID <- gsub("\\.3","",gt2$ID)
+  gt <- gt[!duplicated(gt),]
+  gt2 <- gt2[!duplicated(gt2),]
+  dmrs <- full_join(dmrs,gt,by="ID")
+  dmrs_dip <- full_join(dmrs_dip,gt2,by="ID")
+  print(table(duplicated(dmrs_dip$ID)))
 }
 
-fwrite(s2, file = "DMR_all_pre.vcf", eol = "\n", sep = "\t", row.names = F)
+dmrs[is.na(dmrs)] <- "."
+dmrs_dip[is.na(dmrs_dip)] <- ".|."
 
+CHROM <- as.integer(gsub("_.*","",dmrs$ID))
+POS <- as.integer(gsub(".*_","",dmrs$ID))
+ID <- dmrs$ID
+meta <- as.data.frame(cbind(CHROM,POS,ID))
+meta$REF <- "D"
+meta$ALT <- "M"
+meta$QUAL <- 4000
+meta$FILTER <- "PASS"
+meta$INFO <- "."
+meta$FORMAT <- "GT"
+dmrs <- cbind(meta,dmrs[2:ncol(dmrs)])
+dmrs$POS <- as.integer(dmrs$POS)
+dmrs <- dmrs[order(dmrs$CHROM,dmrs$POS),]
+colnames(dmrs)[1] <- "#CHROM"
+write.table(dmrs,file="bd_dmrs.txt",row.names = F, quote = F,sep="\t")
 
-setwd("C:/Users/Excellaptop/Desktop/data/vcfs/")
-
-dmr <- fread("DMR_all_pre.vcf")
-dmr_m <- round(apply(dmr[,c(2,3)],1, mean))
-dmr$start <- dmr_m
-dmr <- dmr[,-3]
-
-meta <- dmr[,1:3]
-colnames(meta) <- c("#CHROM","POS","ID")
+CHROM <- as.integer(gsub("_.*","",dmrs_dip$ID))
+POS <- as.integer(gsub(".*_","",dmrs_dip$ID))
+ID <- dmrs_dip$ID
+meta <- as.data.frame(cbind(CHROM,POS,ID))
 meta$REF <- "A"
 meta$ALT <- "T"
 meta$QUAL <- 4000
 meta$FILTER <- "PASS"
-meta$INFO <- "DP=1000"
+meta$INFO <- "."
 meta$FORMAT <- "GT"
-dmr <- dmr[,-c(1:3)]
-dmr[dmr == "U"] <- "0|0"
-dmr[dmr == "M"] <- "1|1"
-dmr[is.na(dmr)] <- ".|."
-fwrite(cbind(meta,dmr),file="dmr_meth_all.vcf",quote = F, row.names = F,sep ="\t", eol = "\n")
+dmrs_dip <- cbind(meta,dmrs_dip[2:ncol(dmrs_dip)])
+dmrs_dip$POS <- as.integer(dmrs_dip$POS)
+dmrs_dip <- dmrs_dip[order(dmrs_dip$CHROM,dmrs_dip$POS),]
+colnames(dmrs_dip)[1] <- "#CHROM"
+write.table(dmrs_dip,file="bd_dmrs_dip.txt",row.names = F, quote = F,sep="\t")
 
-dmr_29 <- dmr[,-2]
-fwrite(cbind(meta,dmr_29),file="dmr_meth_29.vcf",quote = F, row.names = F,sep ="\t", eol = "\n")
+lengths <- lengths[!duplicated(lengths),]
+write.table(lengths,file="bd_dmrs_lengths.txt",row.names = F, quote = F,sep="\t")
 ```
 
 21. Make vcfs for group 1, group 6 and all 29 (30 minus reference Bd21) for SNPs, SMPs and DMRs each
@@ -585,15 +647,20 @@ setwd("G:/Meine Ablage/Master/RStudio/Thesis/")
 df1 <- fread("group1_names", header = F, drop = "V1")
 df6 <- fread("group6_names", header = F, drop = "V1")
 
+dmr_30 <- fread("bd_dmrs_dip.vcf", skip = "##")
+dmr_29 <- dmr_30[,-10]
 colnames(dmr_29) %in% df1$V2
+#add header
 
-dmr_grp1 <- dmr_29[,-c(1:7)]
+dmr_grp1 <- dmr_29[,-c(10:16)]
 colnames(dmr_grp1) %in% df1$V2
-fwrite(cbind(meta,dmr_grp1),file="dmr_meth_grp1.vcf",quote = F, row.names = F,sep ="\t", eol = "\n")
+fwrite(dmr_grp1,file="bd_dmrs_dip1.vcf",quote = F, row.names = F,sep ="\t", eol = "\n")
+#add header
 
-dmr_grp6 <- dmr_29[,-c(8:29)]
+dmr_grp6 <- dmr_29[,-c(17:38)]
 colnames(dmr_grp6) %in% df6$V2
-fwrite(cbind(meta,dmr_grp6),file="dmr_meth_grp6.vcf",quote = F, row.names = F,sep ="\t", eol = "\n")
+fwrite(dmr_grp6,file="bd_dmrs_dip6.vcf",quote = F, row.names = F,sep ="\t", eol = "\n")
+#add header
 
 
 ### snps
@@ -699,8 +766,10 @@ fwrite(snp29, file = "snp29_unfiltered_nohet.vcf", quote = F, eol = "\n", sep = 
 
 ```
 
-24. filter with vcftools and plink
+24. filter with vcftools and plink ---> see step 48 for all final filtering steps
 ```
+### see step 48
+
 # filter max 20% NA, only gene body
 vcftools --vcf snp29_unfiltered_nohet.vcf --max-missing 0.8 --recode --bed gene2.bed --out snp29_na --recode-INFO-all
 vcftools --vcf snp1_unfiltered_nohet.vcf --max-missing 0.8 --recode --bed gene2.bed --out snp1_na --recode-INFO-all
@@ -2028,9 +2097,9 @@ plink --bfile ./smp6_exon_nongbm_maf04 --recode vcf-iid -out ./smp6_exon_nongbm_
 
 #### DMRs ####################################################################################################################################
 
-vcftools --vcf dmr29_unfiltered.vcf --max-missing 0.8 --recode --bed gbm_genes2.bed --out ./dmr/dmr29_gbm_na --recode-INFO-all
-vcftools --vcf dmr1_unfiltered.vcf --max-missing 0.8 --recode --bed gbm_genes2.bed --out ./dmr/dmr1_gbm_na --recode-INFO-all
-vcftools --vcf dmr6_unfiltered.vcf --max-missing 0.8 --recode --bed gbm_genes2.bed --out ./dmr/dmr6_gbm_na --recode-INFO-all
+vcftools --vcf bd_dmrs_dip29.vcf --max-missing 0.8 --recode --bed gbm_genes2.bed --out ./dmr/dmr29_gbm_na --recode-INFO-all
+vcftools --vcf bd_dmrs_dip1.vcf --max-missing 0.8 --recode --bed gbm_genes2.bed --out ./dmr/dmr1_gbm_na --recode-INFO-all
+vcftools --vcf bd_dmrs_dip6.vcf --max-missing 0.8 --recode --bed gbm_genes2.bed --out ./dmr/dmr6_gbm_na --recode-INFO-all
 
 
 plink --vcf dmr29_gbm_na.recode.vcf --maf 0.04 --make-bed --out ./dmr29_gbm_maf04 --set-missing-var-ids @:# --keep-allele-order
@@ -2042,9 +2111,9 @@ plink --bfile ./dmr1_gbm_maf04 --recode vcf-iid -out ./dmr1_gbm_maf04 --keep-all
 plink --bfile ./dmr6_gbm_maf04 --recode vcf-iid -out ./dmr6_gbm_maf04 --keep-allele-order
 
 ## get non-gbM dmrs
-vcftools --vcf dmr29_unfiltered.vcf --max-missing 0.8 --recode --bed exon_pos2.bed --out ./dmr/dmr29_exon_na --recode-INFO-all
-vcftools --vcf dmr1_unfiltered.vcf --max-missing 0.8 --recode --bed exon_pos2.bed --out ./dmr/dmr1_exon_na --recode-INFO-all
-vcftools --vcf dmr6_unfiltered.vcf --max-missing 0.8 --recode --bed exon_pos2.bed --out ./dmr/dmr6_exon_na --recode-INFO-all
+vcftools --vcf bd_dmrs_dip29.vcf --max-missing 0.8 --recode --bed exon_pos2.bed --out ./dmr/dmr29_exon_na --recode-INFO-all
+vcftools --vcf bd_dmrs_dip1.vcf --max-missing 0.8 --recode --bed exon_pos2.bed --out ./dmr/dmr1_exon_na --recode-INFO-all
+vcftools --vcf bd_dmrs_dip6.vcf --max-missing 0.8 --recode --bed exon_pos2.bed --out ./dmr/dmr6_exon_na --recode-INFO-all
 
 #from exon filtered dmr vcfs
 vcftools --vcf dmr29_exon_na.recode.vcf --recode --exclude-bed gbm_genes2.bed --out ./non/dmr29_exon_nongbm --recode-INFO-all
@@ -2387,7 +2456,7 @@ write.table(e, file = "Dm_theta_exons_group1.txt", quote = F, sep = "\t", row.na
 
 /proj/popgen/a.ramesh/software/vcftools-vcftools-581c231/bin/vcftools --vcf dmr1.1_gbm_maf10.vcf --out dmr1.1_gbm_maf10 --freq
 /proj/popgen/a.ramesh/software/vcftools-vcftools-581c231/bin/vcftools --vcf dmr1.2_gbm_maf10.vcf --out dmr1.2_gbm_maf10 --freq
-/proj/popgen/a.ramesh/software/vcftools-vcftools-581c231/bin/vcftools --vcf dmr6_gbm_maf10.vcf --out dmr6_gbm_maf10 --freq
+/proj/popgen/a.ramesh/software/vcftools-vcftools-581c231/bin/vcftools --vcf dmr6_gbm_maf04.vcf --out dmr6_gbm_maf04 --freq
 
 /proj/popgen/a.ramesh/software/vcftools-vcftools-581c231/bin/vcftools --vcf dmr1.1_exon_nongbm_maf10.vcf --out dmr1.1_exon_nongbm_maf10 --freq
 /proj/popgen/a.ramesh/software/vcftools-vcftools-581c231/bin/vcftools --vcf dmr1.2_exon_nongbm_maf10.vcf --out dmr1.2_exon_nongbm_maf10 --freq
@@ -2455,4 +2524,3 @@ cat chrlist | while read line; do /proj/popgen/a.ramesh/software/msmc-tools/gene
 Rscript multihetsep_combined.R
 cd ../
 ```
-
