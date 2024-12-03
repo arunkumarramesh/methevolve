@@ -1094,6 +1094,8 @@ write.table(good_intervals,file="good_intervals_alpha",sep="\t",quote=F,row.name
 
 36. Allele frequencies for SMPs and DMRs
 ```
+/proj/popgen/a.ramesh/software/vcftools-vcftools-581c231/bin/vcftools  --vcf arabidopsis_meth_all.vcf  --out ceu_meth_cg  --bed  cg_sites.bed  --keep ceu_invcf_shuf  --max-missing 0.8 --recode
+/proj/popgen/a.ramesh/software/vcftools-vcftools-581c231/bin/vcftools  --vcf arabidopsis_meth_all.vcf  --out ibnr_meth_cg  --bed  cg_sites.bed   --keep ibnr_invcf  --max-missing 0.8 --recode
 /proj/popgen/a.ramesh/software/vcftools-vcftools-581c231/bin/vcftools  --vcf arabidopsis_meth_all.vcf  --out ceu_all_genes  --keep ceu_invcf_shuf  --max-missing 0.8 --freq
 /proj/popgen/a.ramesh/software/vcftools-vcftools-581c231/bin/vcftools  --vcf arabidopsis_meth_all.vcf  --out ibnr_all_genes  --keep ibnr_invcf  --max-missing 0.8 --freq
 /proj/popgen/a.ramesh/software/vcftools-vcftools-581c231/bin/vcftools  --vcf arabidopsis_meth_all.vcf  --out ceu_non_gbm  --bed /proj/popgen/a.ramesh/projects/methylomes/arabidopsis/genomes/non_gbm_genes.bed --keep ceu_invcf_shuf  --max-missing 0.8 --freq
