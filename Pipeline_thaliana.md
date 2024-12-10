@@ -318,6 +318,23 @@ sed 's/\..*//' ibnr_dmrsamples | paste ibnr_dmrsamples - >ibnr_dmrsamples2
 13. Rscript to call differentially methylated regions using jDMR (jdmr.R)
 
 ```
+## modify chr names by removing sample names from them. Was a feature of creating pseudogenomes
+contextfiles <- read.table(file="ceu_contextfiles",header = F)
+
+for(i in 1:nrow(contextfiles)){
+  contextdata <- read.table(file=contextfiles[i,],header=F)
+  contextdata$V1 <- gsub(gsub("\\..*","",contextfiles$V1)[i],"",contextdata$V1)
+  write.table(contextdata,file=gsub(".txt","_mod.txt",contextfiles$V1)[i],row.names = F, col.names = F, quote = F)
+}
+
+contextfiles <- read.table(file="ibnr_contextfiles",header = F)
+
+for(i in 1:nrow(contextfiles)){
+  contextdata <- read.table(file=contextfiles[i,],header=F)
+  contextdata$V1 <- gsub(gsub("\\..*","",contextfiles$V1)[i],"",contextdata$V1)
+  write.table(contextdata,file=gsub(".txt","_mod.txt",contextfiles$V1)[i],row.names = F, col.names = F, quote = F)
+}
+
 library("methimpute",lib.loc="/data/home/users/a.ramesh/R/x86_64-redhat-linux-gnu-library/4.1/")
 library("jDMR",lib.loc="/data/home/users/a.ramesh/R/x86_64-redhat-linux-gnu-library/4.1/")
 
