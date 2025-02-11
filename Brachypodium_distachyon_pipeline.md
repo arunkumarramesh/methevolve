@@ -833,31 +833,15 @@ tree.R
 ```
 ## popLDdecay
 
-/mnt/c/Users/Excellaptop/ubuntu/softwares/PopLDdecay-3.42/bin/PopLDdecay -InVCF ./plink/snp29_maf.vcf -OutStat ./LDdecay/snp29_LDdecay.stat
-/mnt/c/Users/Excellaptop/ubuntu/softwares/PopLDdecay-3.42/bin/PopLDdecay -InVCF ./plink/snp1_maf.vcf -OutStat ./LDdecay/snp1_LDdecay.stat
-/mnt/c/Users/Excellaptop/ubuntu/softwares/PopLDdecay-3.42/bin/PopLDdecay -InVCF ./plink/snp6_maf.vcf -OutStat ./LDdecay/snp6_LDdecay.stat
+#/proj/popgen/a.ramesh/software/vcftools-vcftools-581c231/bin/vcftools --vcf smp1.2_gbm_maf10.vcf --out smp1.2_gbm_maf10 --freq
+#/proj/popgen/a.ramesh/software/vcftools-vcftools-581c231/bin/vcftools --vcf smp1.2_exon_nongbm_maf10.vcf --out smp1.2_exon_nongbm_maf10 --freq
 
-/mnt/c/Users/Excellaptop/ubuntu/softwares/PopLDdecay-3.42/bin/PopLDdecay -InVCF ./plink/smp29_maf.vcf -OutStat ./LDdecay/smp29_LDdecay.stat
-/mnt/c/Users/Excellaptop/ubuntu/softwares/PopLDdecay-3.42/bin/PopLDdecay -InVCF ./plink/smp1_maf.vcf -OutStat ./LDdecay/smp1_LDdecay.stat
-/mnt/c/Users/Excellaptop/ubuntu/softwares/PopLDdecay-3.42/bin/PopLDdecay -InVCF ./plink/smp6_maf.vcf -OutStat ./LDdecay/smp6_LDdecay.stat
+#/proj/popgen/a.ramesh/software/PopLDdecay/bin/PopLDdecay  -InVCF smp1.2_gbm_maf10.vcf -OutStat smp1.2_gbm_maf10_ld_decay -MaxDist 10 -OutType 3
+#python3 ld_bin.py smp1.2_gbm_maf10_ld_decay.LD.gz smp1.2_gbm_maf10_ld_decay.stat 3
 
-/mnt/c/Users/Excellaptop/ubuntu/softwares/PopLDdecay-3.42/bin/PopLDdecay -InVCF ./plink/dmr29_maf.vcf -OutStat ./LDdecay/dmr29_LDdecay.stat
-/mnt/c/Users/Excellaptop/ubuntu/softwares/PopLDdecay-3.42/bin/PopLDdecay -InVCF ./plink/dmr1_maf.vcf -OutStat ./LDdecay/dmr1_LDdecay.stat
-/mnt/c/Users/Excellaptop/ubuntu/softwares/PopLDdecay-3.42/bin/PopLDdecay -InVCF ./plink/dmr6_maf.vcf -OutStat ./LDdecay/dmr6_LDdecay.stat
-
-## plot LDdecay 1kb window
-
-perl /mnt/c/Users/Excellaptop/ubuntu/softwares/PopLDdecay-3.42/bin/Plot_OnePop.pl -inFile ./LDdecay/snp29_LDdecay.stat.gz -maxX 1 -output ./LDdecay/fig_snp29_LDdecay_1kb
-perl /mnt/c/Users/Excellaptop/ubuntu/softwares/PopLDdecay-3.42/bin/Plot_OnePop.pl -inFile ./LDdecay/snp1_LDdecay.stat.gz -maxX 1 -output ./LDdecay/fig_snp1_LDdecay_1kb
-perl /mnt/c/Users/Excellaptop/ubuntu/softwares/PopLDdecay-3.42/bin/Plot_OnePop.pl -inFile ./LDdecay/snp6_LDdecay.stat.gz -maxX 1 -output ./LDdecay/fig_snp6_LDdecay_1kb
-
-perl /mnt/c/Users/Excellaptop/ubuntu/softwares/PopLDdecay-3.42/bin/Plot_OnePop.pl -inFile ./LDdecay/smp29_LDdecay.stat.gz -maxX 1 -output ./LDdecay/fig_smp29_LDdecay_1kb
-perl /mnt/c/Users/Excellaptop/ubuntu/softwares/PopLDdecay-3.42/bin/Plot_OnePop.pl -inFile ./LDdecay/smp1_LDdecay.stat.gz -maxX 1 -output ./LDdecay/fig_smp1_LDdecay_1kb
-perl /mnt/c/Users/Excellaptop/ubuntu/softwares/PopLDdecay-3.42/bin/Plot_OnePop.pl -inFile ./LDdecay/smp6_LDdecay.stat.gz -maxX 1 -output ./LDdecay/fig_smp6_LDdecay_1kb
-
-perl /mnt/c/Users/Excellaptop/ubuntu/softwares/PopLDdecay-3.42/bin/Plot_OnePop.pl -inFile ./LDdecay/dmr29_LDdecay.stat.gz -maxX 1 -output ./LDdecay/fig_dmr29_LDdecay_1kb
-perl /mnt/c/Users/Excellaptop/ubuntu/softwares/PopLDdecay-3.42/bin/Plot_OnePop.pl -inFile ./LDdecay/dmr1_LDdecay.stat.gz -maxX 1 -output ./LDdecay/fig_dmr1_LDdecay_1kb
-perl /mnt/c/Users/Excellaptop/ubuntu/softwares/PopLDdecay-3.42/bin/Plot_OnePop.pl -inFile ./LDdecay/dmr6_LDdecay.stat.gz -maxX 1 -output ./LDdecay/fig_dmr6_LDdecay_1kb
+/proj/popgen/a.ramesh/software/vcftools-vcftools-581c231/bin/vcftools  --max-missing 0.9 --recode --vcf brachy_meth_var_invar_all.vcf --out brachy_meth_1.2 --maf 0.1  --keep group1.2
+/proj/popgen/a.ramesh/software/PopLDdecay/bin/PopLDdecay  -InVCF brachy_meth_1.2.recode.vcf -OutStat smp1.2_maf10_ld_decay -MaxDist 10 -OutType 3
+python3 ld_bin.py smp1.2_maf10_ld_decay.LD.gz smp1.2_maf10_ld_decay.stat 3
 
 ```
 27. Calculate site-pi using vcftools
@@ -2425,90 +2409,40 @@ write.table(e, file = "Dm_theta_exons_group1.txt", quote = F, sep = "\t", row.na
 #repeat for other groups
 ```
 
-50. Thin vcf for DAPC
-```
-/proj/popgen/a.ramesh/software/vcftools-vcftools-581c231/bin/vcftools --recode --out smp29_gbm_maf04_thin --vcf smp29_gbm_maf04.vcf --thin 3000
-```
-
-51. Calculate LD decay
+50. Calculate mSFS.
 
 ```
-/proj/popgen/a.ramesh/software/vcftools-vcftools-581c231/bin/vcftools --vcf smp1.1_gbm_maf10.vcf --out smp1.1_gbm_maf10 --freq
-/proj/popgen/a.ramesh/software/vcftools-vcftools-581c231/bin/vcftools --vcf smp1.2_gbm_maf10.vcf --out smp1.2_gbm_maf10 --freq
-/proj/popgen/a.ramesh/software/vcftools-vcftools-581c231/bin/vcftools --vcf smp6_gbm_maf04.vcf --out smp6_gbm_maf04 --freq
-
-/proj/popgen/a.ramesh/software/PopLDdecay/bin/PopLDdecay  -InVCF smp1.1_gbm_maf10.vcf -OutStat smp1.1_gbm_maf10_ld_decay -MaxDist 10
-/proj/popgen/a.ramesh/software/PopLDdecay/bin/PopLDdecay  -InVCF smp1.2_gbm_maf10.vcf -OutStat smp1.2_gbm_maf10_ld_decay -MaxDist 10
-/proj/popgen/a.ramesh/software/PopLDdecay/bin/PopLDdecay  -InVCF smp6_gbm_maf04.vcf -OutStat smp6_gbm_maf04_ld_decay -MaxDist 10
-```
-
-51. Calculate mSFS.
-
-```
-
-/data/proj2/popgen/a.ramesh/software/vcftools/src/cpp/vcftools --vcf smp1.1_gbm_maf10.vcf --out smp1.2_gbm_maf10 --freq
 /data/proj2/popgen/a.ramesh/software/vcftools/src/cpp/vcftools --vcf smp1.2_gbm_maf10.vcf --out smp1.2_gbm_maf10 --freq
-/data/proj2/popgen/a.ramesh/software/vcftools/src/cpp/vcftools --vcf smp6_gbm_maf04.vcf --out smp6_gbm_maf04 --freq
-
-/proj/popgen/a.ramesh/software/vcftools-vcftools-581c231/bin/vcftools --vcf smp1.1_exon_nongbm_maf10.vcf --out smp1.1_exon_nongbm_maf10 --freq
 /proj/popgen/a.ramesh/software/vcftools-vcftools-581c231/bin/vcftools --vcf smp1.2_exon_nongbm_maf10.vcf --out smp1.2_exon_nongbm_maf10 --freq
-/proj/popgen/a.ramesh/software/vcftools-vcftools-581c231/bin/vcftools --vcf smp6_exon_nongbm_maf04.vcf --out smp6_exon_nongbm_maf04 --freq
-
-/proj/popgen/a.ramesh/software/vcftools-vcftools-581c231/bin/vcftools --vcf dmr1.1_gbm_maf10.vcf --out dmr1.1_gbm_maf10 --freq
-/proj/popgen/a.ramesh/software/vcftools-vcftools-581c231/bin/vcftools --vcf dmr1.2_gbm_maf10.vcf --out dmr1.2_gbm_maf10 --freq
-/proj/popgen/a.ramesh/software/vcftools-vcftools-581c231/bin/vcftools --vcf dmr6_gbm_maf04.vcf --out dmr6_gbm_maf04 --freq
-
-/proj/popgen/a.ramesh/software/vcftools-vcftools-581c231/bin/vcftools --vcf dmr1.1_exon_nongbm_maf10.vcf --out dmr1.1_exon_nongbm_maf10 --freq
-/proj/popgen/a.ramesh/software/vcftools-vcftools-581c231/bin/vcftools --vcf dmr1.2_exon_nongbm_maf10.vcf --out dmr1.2_exon_nongbm_maf10 --freq
-/proj/popgen/a.ramesh/software/vcftools-vcftools-581c231/bin/vcftools --vcf dmr6_exon_nongbm_maf04.vcf --out dmr6_exon_nongbm_maf04 --freq
 
 ```
 
-52. Add header to variant plus invariant vcf
+51. Add header to variant plus invariant vcf
 ```
 cat vcf_header brachy_meth_var_invar.vcf >brachy_meth_var_invar_all.vcf
 ```
 
-53. get number of invariant sites for all sites and for gbm sites only.
+52. get number of invariant sites for all sites and for gbm sites only.
 
 ```
 cp gbm_genes.bed gbm_genes_bd.bed 
 
 /proj/popgen/a.ramesh/software/vcftools-vcftools-581c231/bin/vcftools  --bed  gbm_genes.bed --max-missing 0.8 --recode --vcf brachy_meth_var_invar_all.vcf --out brachy_meth_var_invar_all
-/proj/popgen/a.ramesh/software/vcftools-vcftools-581c231/bin/vcftools  --keep group1.1 --vcf brachy_meth_var_invar_all.vcf  --out group1.1_meth_invar --maf 0 --max-missing 0.9
 /proj/popgen/a.ramesh/software/vcftools-vcftools-581c231/bin/vcftools  --keep group1.2 --vcf brachy_meth_var_invar_all.vcf  --out group1.2_meth_invar --maf 0 --max-missing 0.9
-/proj/popgen/a.ramesh/software/vcftools-vcftools-581c231/bin/vcftools  --keep group6 --vcf brachy_meth_var_invar_all.vcf  --out group6_meth_invar --maf 0 --max-missing 0.9
-
-/proj/popgen/a.ramesh/software/vcftools-vcftools-581c231/bin/vcftools  --keep group1.1 --vcf brachy_meth_var_invar_all.recode.vcf  --out group1.1_meth_invar_gbm --maf 0 --max-missing 0.9
 /proj/popgen/a.ramesh/software/vcftools-vcftools-581c231/bin/vcftools  --keep group1.2 --vcf brachy_meth_var_invar_all.recode.vcf  --out group1.2_meth_invar_gbm  --maf 0 --max-missing 0.9 
-/proj/popgen/a.ramesh/software/vcftools-vcftools-581c231/bin/vcftools  --keep group6 --vcf brachy_meth_var_invar_all.recode.vcf  --out group6_meth_invar_gbm --maf 0 --max-missing 0.9
 
+/proj/popgen/a.ramesh/software/vcftools-vcftools-581c231/bin/vcftools  --keep group1.1_central --vcf brachy_meth_var_invar_all.vcf  --out group1.1_meth_invar --maf 0 --max-missing 0.82 --recode
+/proj/popgen/a.ramesh/software/vcftools-vcftools-581c231/bin/vcftools  --keep group1.1_central --vcf brachy_meth_var_invar_all.recode.vcf  --out group1.1_meth_invar_gbm  --maf 0 --max-missing 0.82 --recode
 
-/proj/popgen/a.ramesh/software/vcftools-vcftools-581c231/bin/vcftools   --vcf smp1.1_gbm_maf10.vcf   --out test1.1 --maf 0.005
-/proj/popgen/a.ramesh/software/vcftools-vcftools-581c231/bin/vcftools  --vcf smp1.2_gbm_maf10.vcf   --out test1.2 --maf 0.005
-/proj/popgen/a.ramesh/software/vcftools-vcftools-581c231/bin/vcftools  --vcf smp6_gbm_maf10.vcf   --out test6 --maf 0.005
-
-```
-
-54. Generate multihetsep files for demographic inference. 
+/proj/popgen/a.ramesh/software/vcftools-vcftools-581c231/bin/vcftools  --keep group1.1_central --vcf brachy_meth_var_invar_all.vcf  --out group1.1_meth_invar --maf 0.16 --max-missing 0.82 --recode
+/proj/popgen/a.ramesh/software/vcftools-vcftools-581c231/bin/vcftools  --keep group1.1_central --vcf brachy_meth_var_invar_all.recode.vcf  --out group1.1_meth_invar_gbm  --maf 0.16 --max-missing 0.82 --recode
 
 ```
-/proj/popgen/a.ramesh/software/vcftools-vcftools-581c231/bin/vcftools --vcf brachy_meth_var_invar_all.vcf --recode  --out group1.1_smps_5mb --keep group1.1 --max-missing 0.9 --bed popgen5mb2_bd.bed
+
+53. Generate multihetsep files for demographic inference. 
+
+```
 /proj/popgen/a.ramesh/software/vcftools-vcftools-581c231/bin/vcftools --vcf brachy_meth_var_invar_all.vcf --recode  --out group1.2_smps_5mb --keep group1.2 --max-missing 0.9 --bed popgen5mb2_bd.bed
-
-cd smps_group1.1/
-/proj/popgen/a.ramesh/software/htslib-1.16/bgzip -f group1.1_smps_5mb.recode.vcf
-/proj/popgen/a.ramesh/software/htslib-1.16/tabix -f group1.1_smps_5mb.recode.vcf.gz
-cat group1.1 |  while read -r  sample remainder; do /proj/popgen/a.ramesh/software/bcftools-1.16/bcftools view -c1 -O v -s $sample -o $sample.filtered.vcf group1.1_smps_5mb.recode.vcf.gz ; done
-for file in *.filtered.vcf ; do /proj/popgen/a.ramesh/software/bcftools-1.16/bcftools annotate -x INFO,^FORMAT/GT -O v -o ${file/.filtered/.annotated} $file ; done
-for file in *.annotated.vcf  ; do /proj/popgen/a.ramesh/software/htslib-1.16/bgzip -f $file; done
-for file in *.annotated.vcf.gz  ; do /proj/popgen/a.ramesh/software/htslib-1.16/tabix -f $file; done
-cat sample_chr_group1.1 |  while read -r value1 value2 remainder ;  do /proj/popgen/a.ramesh/software/vcftools-vcftools-581c231/bin/vcftools --gzvcf $value1.annotated.vcf.gz --out $value1.$value2.snps --min-alleles 1 --max-alleles 3 --recode --recode-INFO-all  --chr $value2 ; done
-for file in *.snps.recode.vcf  ; do /proj/popgen/a.ramesh/software/htslib-1.16/bgzip -f $file; done
-for file in *.snps.recode.vcf.gz  ; do /proj/popgen/a.ramesh/software/htslib-1.16/tabix -f $file; done
-cat chrlist | while read line; do /proj/popgen/a.ramesh/software/msmc-tools/generate_multihetsep.py --mask ../$line.cytosines_tair10.bed  --chr $line *.$line.snps.recode.vcf.gz >group1.1_multihetsep_meth_$line ; done
-Rscript multihetsep_combined.R
-cd ../
 
 cd smps_group1.2/
 /proj/popgen/a.ramesh/software/htslib-1.16/bgzip -f group1.2_smps_5mb.recode.vcf
