@@ -1,4 +1,5 @@
-# 19-Feb 2024
+# 23-Jan 2025
+setwd("/Users/arunkumarramesh/Downloads/")
 library(ggplot2)
 library(dplyr)
 library(pophelper)
@@ -11,31 +12,34 @@ library(ggrepel)
 library(agricolae)
 
 ####  variant site prop (MAF > 0.02) #### 
-ceu_cl_smp_prop <- 99533/299964
-ibnr_cl_smp_prop <- 221392/701123
-ceu_smp_prop <- 512605/1535297
-ibnr_smp_prop <- 1134284/3588665
+ceu_cl_smp_prop <- 310295/387615
+ibnr_cl_smp_prop <- 623882/769044
+ceu_gbm_smp_prop <- 209117/347705
+ibnr_gbm_smp_prop <- 418482/688439
+ceu_nongbm_smp_prop <- 279348/855999
+ibnr_nongbm_smp_prop <- 565856/1881413
+ceu_smp_prop <- 545912/1629415
+ibnr_smp_prop <- 1135849/3589695
 cg_sites <- read.table(file="cg_sites.bed")
-299964/sum(cg_sites$V3-cg_sites$V2) ## to get SMP genotype density
-701123/sum(cg_sites$V3-cg_sites$V2) ## to get SMP genotype density
+387615/sum(cg_sites$V3-cg_sites$V2) ## to get SMP genotype density
+769044/sum(cg_sites$V3-cg_sites$V2) ## to get SMP genotype density
 ceu_snp_gene_prop <- 264383/17022694
 ibnr_snp_gene_prop <- 289088/17022694
 ceu_snp_integenic_prop <- 393091/14585335
 ibnr_snp_integenic_prop <- 412233/14585335
-propsites <- as.data.frame(rbind(ceu_smp_prop,ceu_cl_smp_prop,ceu_snp_gene_prop,ceu_snp_integenic_prop,ibnr_smp_prop,ibnr_cl_smp_prop,ibnr_snp_gene_prop,ibnr_snp_integenic_prop))
+propsites <- as.data.frame(rbind(ceu_smp_prop,ceu_cl_smp_prop,ceu_gbm_smp_prop,ceu_nongbm_smp_prop,ceu_snp_gene_prop,ceu_snp_integenic_prop,ibnr_smp_prop,ibnr_cl_smp_prop,ibnr_gbm_smp_prop,ibnr_nongbm_smp_prop,ibnr_snp_gene_prop,ibnr_snp_integenic_prop))
 colnames(propsites) <- "Proportion"
-propsites$Population <- c("CEU","CEU","CEU","CEU","IBnr","IBnr","IBnr","IBnr")
-propsites$Type <- c("All methylation sites","Clocklike methylation sites","Coding nucleotides","Non-coding nucleotides","All methylation sites","Clocklike methylation sites","Coding nucleotides","Non-coding nucleotides")
-total <- c("n=17022694","n=14585335","n=1535297","n=299964","n=17022694","n=14585335","n=3588665","n=701123")
-propsites$Type <- factor(propsites$Type,levels=c("Coding nucleotides","Non-coding nucleotides","All methylation sites","Clocklike methylation sites"))
+propsites$Population <- c("CEU","CEU","CEU","CEU","CEU","CEU","IBnr","IBnr","IBnr","IBnr","IBnr","IBnr")
+propsites$Type <- c("All methylation sites","Clocklike methylation sites","gbM sites","non-gbM sites","Coding nucleotides","Non-coding nucleotides","All methylation sites","Clocklike methylation sites","gbM sites","non-gbM sites","Coding nucleotides","Non-coding nucleotides")
+total <- c("n=17022694","n=14585335","n=1629415","n=387615","n=347705","n=855999","n=17022694","n=14585335","n=3589695","n=769044","n=688439","n=1881413")
+propsites$Type <- factor(propsites$Type,levels=c("Coding nucleotides","Non-coding nucleotides","All methylation sites","Clocklike methylation sites","gbM sites","non-gbM sites"))
 
 seg_athaliana <- ggplot(data=propsites,aes(x=Population,y=Proportion,fill=Type)) +
   geom_col(position = "dodge") +
-  ylim(c(0,0.5)) +
-  scale_fill_manual(values=c("black","grey","brown","darkgreen")) +
-  geom_text(aes(x=c(seq(0.7,1.3,0.2),seq(1.7,2.3,0.2)),angle=90,y = 0.43, label = total)) +
+  ylim(c(0,1.05)) +
+  scale_fill_manual(values=c("black","grey","brown","darkgreen","lightblue","darkblue")) +
+  geom_text(aes(x=c(seq(0.6,1.4,(1.4-0.6)/(6-1)),seq(1.6,2.4,(2.4-1.6)/(6-1))),angle=90,y = 0.95, label = total)) +
   ylab("Proportion of polymorphic sites")
-
 
 #### pi ####
 
@@ -208,6 +212,9 @@ segments <- data.frame(x=0.7,xend=0.9,y = -3, yend = -3,Class="SNP",Pop="CEU")
 segments <- rbind(segments,c(1.1,1.3,-3,-3,"SNP","IBnr"))
 segments <- rbind(segments,c(1.7,1.9,-4,-4,"SNP","CEU"))
 segments <- rbind(segments,c(2.1,6.3,-4,-4,"SNP","IBnr"))
+segments <- rbind(segments,c(0.7,0.9,-1,-1,"SMP","CEU"))
+segments <- rbind(segments,c(1.1,1.3,-1,-1,"SMP","IBnr"))
+segments <- rbind(segments,c(1.7,5.3,-1.3,-1.3,"SMP","IBnr"))
 segments$x <- as.numeric(segments$x)
 segments$xend <- as.numeric(segments$xend)
 segments$y <- as.numeric(segments$y)
@@ -219,14 +226,7 @@ grouptext <- rbind(grouptext,c(1.8,-3.5,"c","SNP","CEU"))
 grouptext <- rbind(grouptext,c(4.2,-3.5,"d","SNP","IBnr"))
 grouptext <- rbind(grouptext,c(0.8,-0.7,"a","SMP","CEU"))
 grouptext <- rbind(grouptext,c(1.2,-0.7,"b","SMP","IBnr"))
-grouptext <- rbind(grouptext,c(1.8,-0.7,"g","SMP","CEU"))
-grouptext <- rbind(grouptext,c(2.2,-0.7,"fg","SMP","IBnr"))
-grouptext <- rbind(grouptext,c(2.8,-0.7,"ef","SMP","CEU"))
-grouptext <- rbind(grouptext,c(3.2,-0.7,"d","SMP","IBnr"))
-grouptext <- rbind(grouptext,c(3.8,-0.7,"efg","SMP","CEU"))
-grouptext <- rbind(grouptext,c(4.2,-0.7,"de","SMP","IBnr"))
-grouptext <- rbind(grouptext,c(4.8,-0.7,"cd","SMP","CEU"))
-grouptext <- rbind(grouptext,c(5.2,-0.7,"c","SMP","IBnr"))
+grouptext <- rbind(grouptext,c(3.5,-1,"c","SMP","CEU"))
 grouptext$x <- as.numeric(grouptext$x)
 grouptext$y <- as.numeric(grouptext$y)
 
@@ -245,7 +245,7 @@ colnames(pi_ceu_snp)[2] <- "pi_SNP"
 pi_ceu_smp <- ceu_smps_genes[c(8,6)]
 colnames(pi_ceu_smp)[2] <- "pi_SMP"
 pi_ceu_snp_smp <- inner_join(pi_ceu_snp,pi_ceu_smp,by="interval")
-ceu_pi_compare <- ggscatter(data=pi_ceu_snp_smp,x="pi_SNP",y="pi_SMP", shape = 21, cor.coef = T,cor.coef.coord = c(0.000005, 0.01),title = paste("CEU, n=", nrow(pi_ceu_snp_smp),sep=""),size=1) +
+ceu_pi_compare <- ggscatter(data=pi_ceu_snp_smp,x="pi_SNP",y="pi_SMP", shape = 21, cor.coef = T,cor.coef.coord = c(0.000003, 0.01),title = paste("CEU, n=", nrow(pi_ceu_snp_smp),sep=""),size=1) +
   xlab(expression(pi[SNP])) +
   ylab(expression(pi[SMP]))
 
@@ -254,7 +254,7 @@ colnames(pi_ibnr_snp)[2] <- "pi_SNP"
 pi_ibnr_smp <- ibnr_smps_genes[c(8,6)]
 colnames(pi_ibnr_smp)[2] <- "pi_SMP"
 pi_ibnr_snp_smp <- inner_join(pi_ibnr_snp,pi_ibnr_smp,by="interval")
-ibnr_pi_compare <- ggscatter(data=pi_ibnr_snp_smp,x="pi_SNP",y="pi_SMP", shape = 21, cor.coef = T,cor.coef.coord = c(0.000005, 0.015),title = paste("IBnr, n=", nrow(pi_ibnr_snp_smp),sep=""),size=1) +
+ibnr_pi_compare <- ggscatter(data=pi_ibnr_snp_smp,x="pi_SNP",y="pi_SMP", shape = 21, cor.coef = T,cor.coef.coord = c(0.000005, 0.02),title = paste("IBnr, n=", nrow(pi_ibnr_snp_smp),sep=""),size=1) +
   xlab(expression(pi[SNP])) +
   ylab(expression(pi[SMP]))
 
@@ -279,15 +279,15 @@ smp_Dtest_pvals <- HSD.test(aov(lm(data=D_gene_smps,D~treatment)), trt = 'treatm
 smp_Dtest_pvals
 
 grouptext_D <- data.frame(x=0.8,y=5.5,label="a",Class="SMP",Pop="CEU")
-grouptext_D <- rbind(grouptext_D,c(1.2,5.5,"e","SMP","IBnr"))
-grouptext_D <- rbind(grouptext_D,c(1.8,5.5,"d","SMP","CEU"))
-grouptext_D <- rbind(grouptext_D,c(2.2,5.5,"g","SMP","IBnr"))
-grouptext_D <- rbind(grouptext_D,c(2.8,5.5,"c","SMP","CEU"))
+grouptext_D <- rbind(grouptext_D,c(1.2,5.5,"c","SMP","IBnr"))
+grouptext_D <- rbind(grouptext_D,c(1.8,5.5,"b","SMP","CEU"))
+grouptext_D <- rbind(grouptext_D,c(2.2,5.5,"de","SMP","IBnr"))
+grouptext_D <- rbind(grouptext_D,c(2.8,5.5,"b","SMP","CEU"))
 grouptext_D <- rbind(grouptext_D,c(3.2,5.5,"f","SMP","IBnr"))
-grouptext_D <- rbind(grouptext_D,c(3.8,5.5,"c","SMP","CEU"))
-grouptext_D <- rbind(grouptext_D,c(4.2,5.5,"f","SMP","IBnr"))
+grouptext_D <- rbind(grouptext_D,c(3.8,5.5,"b","SMP","CEU"))
+grouptext_D <- rbind(grouptext_D,c(4.2,5.5,"ef","SMP","IBnr"))
 grouptext_D <- rbind(grouptext_D,c(4.8,5.5,"b","SMP","CEU"))
-grouptext_D <- rbind(grouptext_D,c(5.2,5.5,"f","SMP","IBnr"))
+grouptext_D <- rbind(grouptext_D,c(5.2,5.5,"d","SMP","IBnr"))
 grouptext_D <- rbind(grouptext_D,c(0.8,5.5,"h","SNP","CEU"))
 grouptext_D <- rbind(grouptext_D,c(1.2,5.5,"ef","SNP","IBnr"))
 grouptext_D <- rbind(grouptext_D,c(1.8,5.5,"b","SNP","CEU"))
@@ -808,6 +808,9 @@ low_sift_dmrs.frq <- low_sift_dmrs.frq %>%
   dplyr::summarise(count = n(), .groups = 'drop') %>%
   dplyr::group_by(Population) %>%
   dplyr::mutate(proportion = count / sum(count))
+low_sift_dmrs.frq <- rbind(as.data.frame(low_sift_dmrs.frq),c("CEU","[0.22,0.26)",0,0))
+low_sift_dmrs.frq <- rbind(as.data.frame(low_sift_dmrs.frq),c("CEU","[0.38,0.42)",0,0))
+low_sift_dmrs.frq <- rbind(as.data.frame(low_sift_dmrs.frq),c("CEU","[0.54,0.58)",0,0))
 low_sift_dmrs.frq <- rbind(as.data.frame(low_sift_dmrs.frq),c("CEU","[0.74,0.78)",0,0))
 low_sift_dmrs.frq <- rbind(as.data.frame(low_sift_dmrs.frq),c("IBnr","[0.54,0.58)",0,0))
 low_sift_dmrs.frq <- low_sift_dmrs.frq[order(low_sift_dmrs.frq$Population,low_sift_dmrs.frq$N_CHR_binned),]
@@ -857,45 +860,86 @@ plot_grid(a,b,c,ncol=3,rel_widths = c(1,1,1.3))
 dev.off()
 
 #### LD ####
-ceu_snps_cg_genes_decay <- read.table(file="ceu_snps_cg_genes_decay.stat")
-ceu_snps_cg_genes_decay$Type <- "Coding"
-ceu_snps_cg_intergenic_decay <- read.table(file="ceu_snps_cg_intergenic_decay.stat")
-ceu_snps_cg_intergenic_decay$Type <- "Non-coding"
-ceu_meth_cg_ld_decay.stat <- read.table(file="ceu_meth_cg_ld_decay.stat")
-ceu_meth_cg_ld_decay.stat$Type <- "SMP"
-ceu_ld_decay <- rbind(ceu_snps_cg_genes_decay,ceu_snps_cg_intergenic_decay,ceu_meth_cg_ld_decay.stat)
-colnames(ceu_ld_decay) <- c("Dist","Mean_r2","Mean_D","Sum_r", "Sum_D","NumberPairs","Type")
+ceu_snps_decay <- read.table(file="ceu_snps_ld_decay.stat",header = T)
+ceu_snps_decay$Type <- "SNP"
+ceu_snps_decay$Class <- "All sites"
+ceu_snps_cg_genes_decay <- read.table(file="ceu_snps_5mb_cg_genes_decay.stat",header = T)
+ceu_snps_cg_genes_decay$Type <- "Coding SNP"
+ceu_snps_cg_genes_decay$Class <- "Intervals"
+ceu_snps_cg_intergenic_decay <- read.table(file="ceu_snps_5mb_cg_intergenic_decay.stat",header = T)
+ceu_snps_cg_intergenic_decay$Type <- "Non-coding SNP"
+ceu_snps_cg_intergenic_decay$Class <- "Intervals"
+ceu_meth_cg_ld_decay.stat <- read.table(file="ceu_meth_cg_ld_decay.stat",header = T)
+ceu_meth_cg_ld_decay.stat$Type <- "clocklike SMP"
+ceu_meth_cg_ld_decay.stat$Class <- "Intervals"
+ceu_meth_ld_decay.stat <- read.table(file="ceu_smps_wholegenome_ld_decay.stat",header = T)
+ceu_meth_ld_decay.stat$Type <- "SMP"
+ceu_meth_ld_decay.stat$Class <- "All sites"
+ceu_meth_gbm_ld_decay.stat <- read.table(file="ceu_meth_gbm_ld_decay.stat",header = T)
+ceu_meth_gbm_ld_decay.stat$Type <- "gbM SMP"
+ceu_meth_gbm_ld_decay.stat$Class <- "Intervals"
+ceu_ld_decay <- rbind(ceu_snps_decay,ceu_snps_cg_genes_decay,ceu_snps_cg_intergenic_decay,ceu_meth_ld_decay.stat,ceu_meth_cg_ld_decay.stat,ceu_meth_gbm_ld_decay.stat)
+colnames(ceu_ld_decay) <- c("Dist","Mean_r2","Type","Class")
 ceu_ld_decay$Pop <- "CEU"
+ceu_ld_decay$Type <- factor(ceu_ld_decay$Type,levels=c("SNP","SMP","Coding SNP", "Non-coding SNP","clocklike SMP","gbM SMP"))
 ceu_ld_decay_plot <- ggplot(data=ceu_ld_decay,aes(x=Dist,y=Mean_r2,color=Type)) +
-  geom_line() +
+  geom_line(linewidth=1) +
+  facet_wrap(~Class) +
   xlab("Base pairs") +
   ylab(expression(paste("r"^"2"))) +
-  scale_color_manual(labels = c("Coding SNP, n=876487", "Non-coding SNP, n=743427","SMP, n=126198"),values=c("black","grey","brown")) +
+  scale_color_manual(labels = c("SNP","SMP","Coding SNP", "Non-coding SNP","clocklike SMP","gbM SMP"),values=c("purple","brown","black","grey","darkgreen","lightblue")) +
   ggtitle("CEU") +
-  xlim(0,2000) +
+  xlim(0,100) +
   theme_classic2() +
-  theme(legend.position = c(0.55,0.8),legend.title = element_blank(),legend.text = element_text(size = 8))
+  theme(legend.position = "none")
 
-ibnr_snps_cg_genes_decay <- read.table(file="ibnr_snps_cg_genes_decay.stat")
-ibnr_snps_cg_genes_decay$Type <- "Coding"
-ibnr_snps_cg_intergenic_decay <- read.table(file="ibnr_snps_cg_intergenic_decay.stat")
-ibnr_snps_cg_intergenic_decay$Type <- "Non-coding"
-ibnr_meth_cg_ld_decay.stat <- read.table(file="ibnr_meth_cg_ld_decay.stat")
-ibnr_meth_cg_ld_decay.stat$Type <- "SMP"
-ibnr_ld_decay <- rbind(ibnr_snps_cg_genes_decay,ibnr_snps_cg_intergenic_decay,ibnr_meth_cg_ld_decay.stat)
-colnames(ibnr_ld_decay) <- c("Dist","Mean_r2","Mean_D","Sum_r", "Sum_D","NumberPairs","Type")
-ibnr_ld_decay$Pop <- "IBnr"
-ibnr_ld_decay_plot <- ggplot(data=ibnr_ld_decay,aes(x=Dist,y=Mean_r2,color=Type)) +
-  geom_line() +
+for_ld_legend <- ggplot(data=ceu_ld_decay,aes(x=Dist,y=Mean_r2,color=Type)) +
+  geom_line(linewidth=1) +
+  facet_wrap(~Class) +
   xlab("Base pairs") +
   ylab(expression(paste("r"^"2"))) +
-  scale_color_manual(labels = c("Coding SNP, n=1051572", "Non-coding SNP, n=928115","SMP, n=284644"),values=c("black","grey","brown")) +
-  ggtitle("IBnr") +
-  xlim(0,2000) +
+  scale_color_manual(labels = c("SNP","SMP","Coding SNP", "Non-coding SNP","clocklike SMP","gbM SMP"),values=c("purple","brown","black","grey","darkgreen","lightblue")) +
+  ggtitle("CEU") +
+  xlim(0,100) +
   theme_classic2() +
-  theme(legend.position = c(0.55,0.8),legend.title = element_blank(),legend.text = element_text(size = 8))
+  theme(legend.title = element_blank(),legend.text = element_text(size = 8))
 
-ld_decay_plot <- plot_grid(ceu_ld_decay_plot, ibnr_ld_decay_plot)
+ibnr_snps_decay <- read.table(file="ibnr_snps_ld_decay.stat",header = T)
+ibnr_snps_decay$Type <- "SNP"
+ibnr_snps_decay$Class <- "All sites"
+ibnr_snps_cg_genes_decay <- read.table(file="ibnr_snps_5mb_cg_genes_decay.stat",header = T)
+ibnr_snps_cg_genes_decay$Type <- "Coding SNP"
+ibnr_snps_cg_genes_decay$Class <- "Intervals"
+ibnr_snps_cg_intergenic_decay <- read.table(file="ibnr_snps_5mb_cg_intergenic_decay.stat",header = T)
+ibnr_snps_cg_intergenic_decay$Type <- "Non-coding SNP"
+ibnr_snps_cg_intergenic_decay$Class <- "Intervals"
+ibnr_meth_cg_ld_decay.stat <- read.table(file="ibnr_meth_cg_ld_decay.stat",header = T)
+ibnr_meth_cg_ld_decay.stat$Type <- "clocklike SMP"
+ibnr_meth_cg_ld_decay.stat$Class <- "Intervals"
+ibnr_meth_ld_decay.stat <- read.table(file="ibnr_smps_wholegenome_ld_decay.stat",header = T)
+ibnr_meth_ld_decay.stat$Type <- "SMP"
+ibnr_meth_ld_decay.stat$Class <- "All sites"
+ibnr_meth_gbm_ld_decay.stat <- read.table(file="ibnr_meth_gbm_ld_decay.stat",header = T)
+ibnr_meth_gbm_ld_decay.stat$Type <- "gbM SMP"
+ibnr_meth_gbm_ld_decay.stat$Class <- "Intervals"
+ibnr_ld_decay <- rbind(ibnr_snps_decay,ibnr_snps_cg_genes_decay,ibnr_snps_cg_intergenic_decay,ibnr_meth_ld_decay.stat,ibnr_meth_cg_ld_decay.stat,ibnr_meth_gbm_ld_decay.stat)
+colnames(ibnr_ld_decay) <- c("Dist","Mean_r2","Type","Class")
+ibnr_ld_decay$Pop <- "ibnr"
+ibnr_ld_decay$Type <- factor(ibnr_ld_decay$Type,levels=c("SNP","SMP","Coding SNP", "Non-coding SNP","clocklike SMP","gbM SMP"))
+ibnr_ld_decay_plot <- ggplot(data=ibnr_ld_decay,aes(x=Dist,y=Mean_r2,color=Type)) +
+  geom_line(linewidth=1) +
+  facet_wrap(~Class) +
+  xlab("Base pairs") +
+  ylab(expression(paste("r"^"2"))) +
+  scale_color_manual(labels = c("SNP","SMP","Coding SNP", "Non-coding SNP","clocklike SMP","gbM SMP"),values=c("purple","brown","black","grey","darkgreen","lightblue")) +
+  ggtitle("IBnr") +
+  xlim(0,100) +
+  theme_classic2() +
+  theme(legend.position = "none")
+
+pdf("LD_leg.pdf",height=2.5,width = 8.5)
+for_ld_legend
+dev.off()
 
 #### IBD blocks  ####
 
@@ -933,7 +977,7 @@ ibnr_ld_mid$Type <- "IBD"
 #### dmr size  ####
 regions <- read.table(file="popgen5mb.bed")
 
-dmrs_ceu <- read.table(file="10020.trim_methylome_CG.txt",header=T)
+dmrs_ceu <- read.table(file="10020_methylome_CG.txt",header=T)
 dmrs_ceu <- dmrs_ceu[1:3]
 dmrs_ceu$size <- dmrs_ceu$end - dmrs_ceu$start
 dmrs_ceu <- dmrs_ceu[!((dmrs_ceu$seqnames %in% "1") & (dmrs_ceu$start < regions$V2[1])),]
@@ -953,7 +997,7 @@ ggplot(dmrs_ceu,aes(x=size)) +
   ylab("Proportion of DMRs") +
   ggtitle("CEU DMR blocks")
 
-dmrs_ibnr <- read.table(file="9950.trim_methylome_CG.txt",header=T)
+dmrs_ibnr <- read.table(file="9950_methylome_CG.txt",header=T)
 dmrs_ibnr <- dmrs_ibnr[1:3]
 dmrs_ibnr$size <- dmrs_ibnr$end - dmrs_ibnr$start
 
@@ -997,9 +1041,7 @@ LD_DMR_block_plot <- ggplot(data=ld_dmr,aes(x=Population,y=log10(Size),fill=Type
   scale_fill_manual(values=c("purple","gold"))
   #geom_text(data = df_thaliana_ld_dmr,aes(y = log10(160000)+0.5,x=c(0.8,1.2,1.8,2.2),label = n))
 
-#pdf("LD.pdf",height=2.5,width = 8.3)
-#dev.off()
-#plot_grid(ld_decay_plot,LD_DMR_block_plot,labels=c("A","B"),rel_widths = c(2.3,1),ncol=1)
+ld_decay_plot <- plot_grid(ceu_ld_decay_plot, ibnr_ld_decay_plot)
 
 #### tree  ####
 
@@ -1050,9 +1092,9 @@ snp_gene_tree_pop_plot <- ggtree(snp_gene_tree_pop,
               size=0.5,
               aes(color=Population))+
   geom_tiplab(size=4,face="italic")+
-  xlim(-0.1,0.5)+
-  ylim(-0.1,0.5)+
-  theme(legend.text = element_text(face="italic",size=10),
+    xlim(-0.1,0.5)+
+    ylim(-0.1,0.5)+
+    theme(legend.text = element_text(face="italic",size=10),
         legend.position = "right",
         plot.title = element_text(hjust = 0.55, vjust = 0.1),
         plot.margin = unit(c(0.01, 0.01, 0.01, 0.01), "cm"))+
@@ -1070,10 +1112,10 @@ snp_intergenic_pop_tree_plot <- ggtree(snp_intergenic_pop_tree,
        layout = "ape",
        size=0.5,
        aes(color=Population))+
-  geom_tiplab(size=4,face="italic")+
-  xlim(-0.1,0.5)+
-  ylim(-0.1,0.5)+
-  theme(legend.text = element_text(face="italic",size=10),
+    geom_tiplab(size=4,face="italic")+
+    xlim(-0.1,0.5)+
+    ylim(-0.1,0.5)+
+    theme(legend.text = element_text(face="italic",size=10),
         legend.position = "right",
         plot.title = element_text(hjust = 0.55, vjust = 0.1),
         plot.margin = unit(c(0.01, 0.01, 0.01, 0.01), "cm"))+
@@ -1091,10 +1133,10 @@ smp_cg_tree_pop_plot <- ggtree(smp_cg_tree_pop,
        layout = "ape",
        size=0.5,
        aes(color=Population))+
-  xlim(-0.3,0.7)+
-  ylim(-0.3,0.7)+
-  geom_tiplab(size=4,face="italic")+
-  theme(legend.text = element_text(face="italic",size=10),
+    xlim(-0.3,0.7)+
+    ylim(-0.3,0.7)+
+    geom_tiplab(size=4,face="italic")+
+    theme(legend.text = element_text(face="italic",size=10),
         legend.position = "right",
         plot.title = element_text(hjust = 0.55, vjust = -10),
         plot.margin = unit(c(-0.1, -0.1, -0.1, -0.1), "cm"))+
@@ -1112,10 +1154,10 @@ dmr_tree_pop_plot <- ggtree(dmr_tree_pop,
        layout = "ape",
        size=0.5,
        aes(color=Population))+
-  xlim(-0.2,0.6)+
-  ylim(-0.2,0.6)+
-  geom_tiplab(size=4,face="italic")+
-  theme(legend.text = element_text(face="italic",size=10),
+    xlim(-0.2,0.6)+
+    ylim(-0.2,0.6)+
+    geom_tiplab(size=4,face="italic")+
+    theme(legend.text = element_text(face="italic",size=10),
         legend.position = "right",
         plot.title = element_text(hjust = 0.55, vjust = 0.1),
         plot.margin = unit(c(-0.1, -0.1, -0.1, -0.1), "cm"))+
@@ -1127,8 +1169,8 @@ dmr_tree_pop_plot <- ggtree(dmr_tree_pop,
   #ggtitle("DMR") +
   guides(color = "none")
 
-pdf(file="trees.pdf",height=5,width=6)
-plot_grid(snp_intergenic_pop_tree_plot,snp_gene_tree_pop_plot,smp_cg_tree_pop_plot,dmr_tree_pop_plot,labels = c('Non-coding SNP, n=884064', 'Coding SNP, n=1022482','SMP, n=237204','DMR, n=1705'),hjust=-0.1)
+pdf(file="trees2.pdf",height=5,width=6)
+plot_grid(snp_intergenic_pop_tree_plot,snp_gene_tree_pop_plot,smp_cg_tree_pop_plot,dmr_tree_pop_plot,labels = c('Non-coding SNP, n=884064', 'Coding SNP, n=1022482','SMP, n=648376','DMR, n=2142'),hjust=-0.1)
 dev.off()
 
 smp_gbm_tree<-read.tree("ceu_ibnr_meth_gbm_dis_mat_fastme-tree.nwk")
@@ -1137,10 +1179,10 @@ smp_gbm_tree_pop_plot <- ggtree(smp_gbm_tree_pop,
                                 layout = "ape",
                                 size=0.5,
                                 aes(color=Population))+
-  xlim(-0.3,0.7)+
-  ylim(-0.3,0.7)+
-  geom_tiplab(size=4,face="italic")+
-  theme(legend.text = element_text(face="italic",size=10),
+    xlim(-0.3,0.7)+
+    ylim(-0.3,0.7)+
+    geom_tiplab(size=4,face="italic")+
+    theme(legend.text = element_text(face="italic",size=10),
         legend.position = "right",
         plot.title = element_text(hjust = 0.55, vjust = -10),
         plot.margin = unit(c(-0.1, -0.1, -0.1, -0.1), "cm"))+
@@ -1160,10 +1202,10 @@ dmr_gbm_tree_pop_plot <- ggtree(dmr_gbm_tree_pop,
                                 layout = "ape",
                                 size=0.5,
                                 aes(color=Population))+
-  xlim(-0.2,0.6)+
-  ylim(-0.2,0.6)+
-  geom_tiplab(size=4,face="italic")+
-  theme(legend.text = element_text(face="italic",size=10),
+    xlim(-0.2,0.6)+
+    ylim(-0.2,0.6)+
+    geom_tiplab(size=4,face="italic")+
+    theme(legend.text = element_text(face="italic",size=10),
         legend.position = "right",
         plot.title = element_text(hjust = 0.55, vjust = 0.1),
         plot.margin = unit(c(-0.1, -0.1, -0.1, -0.1), "cm"))+
@@ -1176,7 +1218,7 @@ dmr_gbm_tree_pop_plot <- ggtree(dmr_gbm_tree_pop,
   guides(color = "none")
 
 pdf("trees_gBM.pdf",height = 3, width=6)
-plot_grid(smp_gbm_tree_pop_plot,dmr_gbm_tree_pop_plot,labels = c('gbM SMP, n=175790','gbM DMR, n=1563'))
+plot_grid(smp_gbm_tree_pop_plot,dmr_gbm_tree_pop_plot,labels = c('gbM SMP, n=346521','gbM DMR, n=1200'))
 dev.off()
 
 #### DAPC ####
@@ -1196,17 +1238,21 @@ colnames(ibnr_invcf) <- "INDIVIDUALS"
 ibnr_invcf$STRATA <- "IBnr"
 stratafile <- rbind(ceu_invcf,ibnr_invcf)
 
-smpfilesampleorder <- as.data.frame(c("X10020","X403","X428","X430","X5874","X5907","X6008","X6296","X6396","X6445","X6903","X6951","X6956","X6957","X6976","X6984","X7103","X7120","X7177","X7203","X7207","X7296","X7350","X7424","X7520","X7521","X8284","X8386","X9665","X9668","X9671","X9676","X9679","X9684","X9689","X9690","X9693","X9696","X9727","X9728","X9729","X9730","X9731","X9732","X9733","X9735","X9973","X410","X424","X5890","X5893","X5921","X5950","X5993","X6390","X7067","X8236","X8285","X8290","X8365","X9694","X9914","X9915","X6933","X6970","X7328","X9507","X9510","X9511","X9514","X9515","X9521","X9522","X9524","X9525","X9534","X9535","X9537","X9540","X9541","X9544","X9547","X9556","X9557","X9560","X9562","X9564","X9567","X9568","X9577","X9582","X9588","X9594","X9821","X9822","X9825","X9833","X9834","X9836","X9840","X9841","X9843","X9844","X9845","X9852","X9856","X9857","X9859","X9861","X9864","X9867","X9868","X9870","X9873","X9876","X9878","X9886","X9888","X9899","X9900","X9902","X9904","X9946","X9950","X6971","X7327"))
+smpfilesampleorder <- as.data.frame(c(gsub("^","X", ceu_invcf[order(as.character(ceu_invcf$INDIVIDUALS)),]$INDIVIDUALS),gsub("^","X", ibnr_invcf[order(as.character(ibnr_invcf$INDIVIDUALS)),]$INDIVIDUALS)))
 colnames(smpfilesampleorder) <- "INDIVIDUALS"
 stratafile2 <- stratafile
 stratafile2$INDIVIDUALS <- gsub("^","X",stratafile2$INDIVIDUALS)
 stratafile2 <- left_join(smpfilesampleorder,stratafile2,by="INDIVIDUALS")
 smp_genlight <- genomic_converter(data = "ceu_ibnr_meth_cg_maf_thin.recode.vcf", strata = stratafile2,output = c("genlight"))
+par(mfrow = c(1, 3))
 smp_grp <- find.clusters(smp_genlight$genlight,max.n.clust=20)
+60
+2
 smp_mat <- as.matrix(smp_genlight$genlight)
 smp_genotype_matrix <- apply(smp_mat,2,na.replace,mean, na.rm = TRUE)
 colnames(smp_genotype_matrix) <- seq(1:ncol(smp_genotype_matrix))
 smp_xval <- xvalDapc(x=smp_genotype_matrix, grp=smp_genlight$genlight$pop,n.pca.max=15,training.set = 0.9,result = "groupMean", center = TRUE, scale = FALSE, n.rep = 30, xval.plot = TRUE)
+dev.off()
 smp_dapc <- dapc(smp_genlight$genlight, n.pca=5,n.da=2)
 
 smpfilesampleorder <- as.data.frame(c("X10020","X403","X428","X430","X5874","X5907","X6008","X6296","X6396","X6445","X6903","X6951","X6956","X6957","X6976","X6984","X7103","X7120","X7177","X7203","X7207","X7296","X7350","X7424","X7520","X7521","X8284","X8386","X9665","X9668","X9671","X9676","X9679","X9684","X9689","X9690","X9693","X9696","X9727","X9728","X9729","X9730","X9731","X9732","X9733","X9735","X9973","X410","X424","X5890","X5893","X5921","X5950","X5993","X6390","X7067","X8236","X8285","X8290","X8365","X9694","X9914","X9915","X6933","X6970","X7328","X9507","X9510","X9511","X9514","X9515","X9521","X9522","X9524","X9525","X9534","X9535","X9537","X9540","X9541","X9544","X9547","X9556","X9557","X9560","X9562","X9564","X9567","X9568","X9577","X9582","X9588","X9594","X9821","X9822","X9825","X9833","X9834","X9836","X9840","X9841","X9843","X9844","X9845","X9852","X9856","X9857","X9859","X9861","X9864","X9867","X9868","X9870","X9873","X9876","X9878","X9886","X9888","X9899","X9900","X9902","X9904","X9946","X9950","X6971","X7327"))
@@ -1215,11 +1261,15 @@ stratafile2 <- stratafile
 stratafile2$INDIVIDUALS <- gsub("^","X",stratafile2$INDIVIDUALS)
 stratafile2 <- left_join(smpfilesampleorder,stratafile2,by="INDIVIDUALS")
 smp_gbm_genlight <- genomic_converter(data = "ceu_ibnr_meth_gbm_thin.recode.vcf", strata = stratafile2,output = c("genlight"))
+par(mfrow = c(1, 3))
 smp_gbm_grp <- find.clusters(smp_gbm_genlight$genlight,max.n.clust=20)
+60
+2
 smp_gbm_mat <- as.matrix(smp_gbm_genlight$genlight)
 smp_gbm_genotype_matrix <- apply(smp_gbm_mat,2,na.replace,mean, na.rm = TRUE)
 colnames(smp_gbm_genotype_matrix) <- seq(1:ncol(smp_gbm_genotype_matrix))
 smp_gbm_xval <- xvalDapc(x=smp_gbm_genotype_matrix, grp=smp_gbm_genlight$genlight$pop,n.pca.max=15,training.set = 0.9,result = "groupMean", center = TRUE, scale = FALSE, n.rep = 30, xval.plot = TRUE)
+dev.off()
 smp_gbm_dapc <- dapc(smp_gbm_genlight$genlight, n.pca=5,n.da=2)
 
 dmrfilesampleorder <-  as.data.frame(c("10020","403","410","424","428","430","5874","5890","5893","5907","5921","5950","5993","6008","6296","6390","6396","6445","6903","6951","6956","6957","6976","6984","7067","7103","7120","7177","7203","7207","7296","7350","7424","7520","7521","8236","8284","8285","8290","8365","8386","9665","9668","9671","9676","9679","9684","9689","9690","9693","9694","9696","9727","9728","9729","9730","9731","9732","9733","9735","9914","9915","9973","6933","6970","6971","7327","7328","9507","9510","9511","9514","9515","9521","9522","9524","9525","9534","9535","9537","9540","9541","9544","9547","9556","9557","9560","9562","9564","9567","9568","9577","9582","9588","9594","9821","9822","9825","9833","9834","9836","9840","9841","9843","9844","9845","9852","9856","9857","9859","9861","9864","9867","9868","9870","9873","9876","9878","9886","9888","9899","9900","9902","9904","9946","9950"))
@@ -1227,11 +1277,15 @@ colnames(dmrfilesampleorder) <- "INDIVIDUALS"
 dmrfilesampleorder$INDIVIDUALS <- as.integer(dmrfilesampleorder$INDIVIDUALS)
 stratafile3 <- left_join(dmrfilesampleorder,stratafile,by="INDIVIDUALS")
 dmr_genlight <- genomic_converter(data = "ceu_ibnr_dmrs_cg_maf.recode.vcf", strata = stratafile3,output = c("genlight"))
+par(mfrow = c(1, 3))
 dmr_grp <- find.clusters(dmr_genlight$genlight,max.n.clust=20)
+60
+2
 dmr_mat <- as.matrix(dmr_genlight$genlight)
 dmr_genotype_matrix <- apply(dmr_mat,2,na.replace,mean, na.rm = TRUE)
 colnames(dmr_genotype_matrix) <- seq(1:ncol(dmr_genotype_matrix))
 dmr_xval <- xvalDapc(x=dmr_genotype_matrix, grp=dmr_genlight$genlight$pop,n.pca.max=15,training.set = 0.9,result = "groupMean", center = TRUE, scale = FALSE, n.rep = 30, xval.plot = TRUE)
+dev.off()
 dmr_dapc <- dapc(dmr_genlight$genlight, n.pca=5,n.da=2)
 
 ceu_invcf <- read.table(file="ceu_invcf_shuf2")
@@ -1242,11 +1296,15 @@ colnames(ibnr_invcf) <- "INDIVIDUALS"
 ibnr_invcf$STRATA <- "IBnr"
 stratafile <- rbind(ceu_invcf,ibnr_invcf)
 dmr_gbm_genlight <- genomic_converter(data = "ceu_ibnr_dmrs_gbm.recode.vcf", strata = stratafile,output = c("genlight"))
+par(mfrow = c(1, 3))
 dmr_gbm_grp <- find.clusters(dmr_gbm_genlight$genlight,max.n.clust=20)
+60
+2
 dmr_gbm_mat <- as.matrix(dmr_gbm_genlight$genlight)
 dmr_gbm_genotype_matrix <- apply(dmr_gbm_mat,2,na.replace,mean, na.rm = TRUE)
 colnames(dmr_gbm_genotype_matrix) <- seq(1:ncol(dmr_gbm_genotype_matrix))
 dmr_gbm_xval <- xvalDapc(x=dmr_gbm_genotype_matrix, grp=dmr_gbm_genlight$genlight$pop,n.pca.max=15,training.set = 0.9,result = "groupMean", center = TRUE, scale = FALSE, n.rep = 30, xval.plot = TRUE)
+dev.off()
 dmr_gbm_dapc <- dapc(dmr_gbm_genlight$genlight, n.pca=5,n.da=2)
 
 ceu_invcf <- read.table(file="ceu_invcf_shuf2")
@@ -1280,17 +1338,249 @@ title(main = "Non-coding SNP, n=4015")
 scatter(genic_dapc, ratio.pca=0.2, bg="white", pch=20, cell=0,cstar=0, solid=.5, cex=5, clab=0,mstree=TRUE,  col = hue_pal()(2))
 title(main = "Coding SNP, n=5077")
 scatter(smp_dapc, ratio.pca=0.2, bg="white", pch=20, cell=0,cstar=0, solid=.5, cex=5, clab=0,mstree=TRUE, col=hue_pal()(2))
-title(main = "SMP, n=4181")
+title(main = "SMP, n=10731")
 scatter(dmr_dapc, ratio.pca=0.2, bg="white", pch=20, cell=0,cstar=0, solid=.5, cex=5, clab=0,mstree=TRUE,  col = hue_pal()(2))
-title(main = "DMR, n=1316")
+title(main = "DMR, n=1157")
 dev.off()
 
 
 pdf("DAPC_gBM.pdf",height=3.5,width=7)
 par(mfrow = c(1, 2))
 scatter(smp_dapc, ratio.pca=0.2, bg="white", pch=20, cell=0,cstar=0, solid=.5, cex=5, clab=0,mstree=TRUE, posi.leg ="topleft",leg=T, txt.leg=c("CEU","IBnr"),col=hue_pal()(2))
-title(main = "gbM SMP, n=2903")
+title(main = "gbM SMP, n=5639")
 scatter(dmr_gbm_dapc, ratio.pca=0.2, bg="white", pch=20, cell=0,cstar=0, solid=.5, cex=5, clab=0,mstree=TRUE, col = hue_pal()(2))
-title(main = "gbM DMR, n=1196")
+title(main = "gbM DMR, n=664")
 dev.off()
 
+
+#### TE frequencies ####
+
+ceu_te.frq <- read.table(file="ceu_te.frq",row.names = NULL, header = T)
+ceu_te.frq$N_CHR <- as.numeric(gsub("A:","",ceu_te.frq$N_CHR))
+ceu_te.frq <- ceu_te.frq[(ceu_te.frq$N_CHR > 0.02) & (ceu_te.frq$N_CHR < 0.98),]
+ceu_te.frq$Population <- "CEU"
+ibnr_te.frq <- read.table(file="ibnr_te.frq",row.names = NULL, header = T)
+ibnr_te.frq$N_CHR <- as.numeric(gsub("A:","",ibnr_te.frq$N_CHR))
+ibnr_te.frq <- ibnr_te.frq[(ibnr_te.frq$N_CHR > 0.02) & (ibnr_te.frq$N_CHR < 0.98),]
+ibnr_te.frq$Population <- "IBnr"
+te.frq <- rbind(ceu_te.frq,ibnr_te.frq)
+te.frq <- te.frq %>%
+  dplyr::mutate(N_CHR_binned = cut(N_CHR, breaks = seq(0.02, 0.98, by = 0.04), include.lowest = TRUE, right = FALSE)) %>%
+  dplyr::group_by(Population, N_CHR_binned) %>%
+  dplyr::summarise(count = n(), .groups = 'drop') %>%
+  dplyr::group_by(Population) %>%
+  dplyr::mutate(proportion = count / sum(count))
+te.frq$N_CHR_binned <- c(seq(0.04,0.96,0.04),seq(0.04,0.96,0.04))
+te.frq.plot <- ggplot(te.frq, aes(x=N_CHR_binned, y=proportion, fill=Population)) +
+  geom_bar(stat="identity", position="dodge") +
+  labs(y="Proportion of TEs", x="TE absence frequency") +
+  theme_minimal()+
+  scale_fill_discrete(labels = c(nrow(ceu_te.frq),nrow(ibnr_te.frq))) +
+  ggtitle("Transposable elements (TE)") +
+  theme(legend.title = element_blank(),legend.position = c(0.5, 0.8))
+
+
+#### STR analysis   ####
+
+library(GenomicRanges)
+library(dplyr)
+
+### get STR data
+str <- read.table(file="210217.SuppDataSet2.DiploidUnitNumberCalls.tsv",sep="\t",row.names = 1,header=T)
+
+### only keep STRs that occur in intergenic regions
+positions <- colnames(str)
+position_data <- data.frame(chr = sub("_.*", "", positions), pos = as.numeric(sub(".*_", "", positions)))
+position_data$chr <- sub("chr", "", position_data$chr)
+bed_data <- read.table("non_gene_at.bed", col.names = c("chr", "start", "end"))
+query_ranges <- GRanges(seqnames = position_data$chr, ranges = IRanges(start = position_data$pos, end = position_data$pos))
+bed_ranges <- GRanges(seqnames = as.character(bed_data$chr),  ranges = IRanges(start = bed_data$start, end = bed_data$end))
+overlaps <- findOverlaps(query_ranges, bed_ranges)
+matched_positions <- positions[queryHits(overlaps)]
+str <- str[colnames(str) %in% matched_positions]
+
+### extract polymorphic STRs for CEU
+ceusamples <- read.table(file="ceu_invcf_shuf2")
+ceu_str <- str[rownames(str) %in% ceusamples$V1,]
+ceu_str <- ceu_str[sapply(apply(ceu_str,2,table),length) > 1]
+
+### make all values 2 digits
+ceu_str <- as.data.frame(lapply(ceu_str, function(x) sprintf("%02d", x)))
+
+#  function to create diploid genotypes by combining samples
+combine_random_rows <- function(df) {
+  # Randomly shuffle the row indices
+  shuffled_indices <- sample(nrow(df))
+  
+  # Rearrange the dataframe with shuffled rows
+  df <- df[shuffled_indices, , drop = FALSE]
+  
+  # Create an empty data frame with the same column names
+  combined_df <- data.frame(matrix(ncol = ncol(df), nrow = nrow(df) / 2))
+  colnames(combined_df) <- colnames(df)
+  
+  # Loop over each column
+  for (i in 1:ncol(df)) {
+    # Combine every two randomly paired rows with a '/' for each column
+    combined_df[, i] <- sapply(seq(1, nrow(df), by = 2), function(j) {
+      return(paste(df[j, i], df[j+1, i], sep = ""))
+    })
+  }
+  
+  # Replace all cells that contain "NA" (even partial matches) with actual NA
+  combined_df[] <- lapply(combined_df, function(x) {
+    x[grepl("NA", x)] <- NA_character_
+    return(x)
+  })
+  
+  # Return the combined data frame
+  return(combined_df)
+}
+ceu_str_dip <- combine_random_rows(ceu_str)
+ceu_str_dip[is.na(ceu_str_dip)] <- "0000"
+
+# Function to convert haploid data to Genepop format
+convert_to_genepop <- function(diploid_data, output_file, title = "Haploid dataset converted for Genepop") {
+  # Extract locus names
+  loci_names <- colnames(diploid_data)
+  sample_ids <- rownames(diploid_data)
+  # Open file for writing
+  fileConn <- file(output_file, "w")  # "w" ensures a fresh write
+  writeLines(title, fileConn)  # Title line
+  close(fileConn)
+  # Append locus names
+  for (l in loci_names) {
+    cat(l, "\n", file = output_file, append = TRUE)
+  }
+  # Append first population marker
+  cat("Pop\n", file = output_file, append = TRUE)
+  # Append each individual's genotype data
+  for (i in seq_along(sample_ids)) {
+    line <- paste0(sample_ids[i], " , ", paste(diploid_data[i, ], collapse = "\t"))
+    cat(line, "\n", file = output_file, append = TRUE)
+  }
+  message("Genepop file saved as: ", output_file)
+}
+
+ceu_str_100 <- ceu_str_dip[sample(ncol(ceu_str_dip), 100, replace = FALSE)]
+convert_to_genepop(ceu_str_100, "ceu_str_rep1_100.txt")
+
+ceu_str_100 <- ceu_str_dip[sample(ncol(ceu_str_dip), 100, replace = FALSE)]
+convert_to_genepop(ceu_str_100, "ceu_str_rep2_100.txt")
+
+ceu_str_100 <- ceu_str_dip[sample(ncol(ceu_str_dip), 100, replace = FALSE)]
+convert_to_genepop(ceu_str_100, "ceu_str_rep3_100.txt")
+
+ceu_str_100 <- ceu_str_dip[sample(ncol(ceu_str_dip), 100, replace = FALSE)]
+convert_to_genepop(ceu_str_100, "ceu_str_rep4_100.txt")
+
+ceu_str_100 <- ceu_str_dip[sample(ncol(ceu_str_dip), 100, replace = FALSE)]
+convert_to_genepop(ceu_str_100, "ceu_str_rep5_100.txt")
+
+ceu_str_100 <- ceu_str_dip[sample(ncol(ceu_str_dip), 100, replace = FALSE)]
+convert_to_genepop(ceu_str_100, "ceu_str_rep6_100.txt")
+
+ceu_str_100 <- ceu_str_dip[sample(ncol(ceu_str_dip), 100, replace = FALSE)]
+convert_to_genepop(ceu_str_100, "ceu_str_rep7_100.txt")
+
+ceu_str_100 <- ceu_str_dip[sample(ncol(ceu_str_dip), 100, replace = FALSE)]
+convert_to_genepop(ceu_str_100, "ceu_str_rep8_100.txt")
+
+ceu_str_100 <- ceu_str_dip[sample(ncol(ceu_str_dip), 100, replace = FALSE)]
+convert_to_genepop(ceu_str_100, "ceu_str_rep9_100.txt")
+
+ceu_str_100 <- ceu_str_dip[sample(ncol(ceu_str_dip), 100, replace = FALSE)]
+convert_to_genepop(ceu_str_100, "ceu_str_rep10_100.txt")
+
+### extract polymorphic STRs for IBnr
+ibnrsamples <- read.table(file="ibnr_invcf2")
+ibnr_str <- str[rownames(str) %in% ibnrsamples$V1,]
+ibnr_str <- ibnr_str[sapply(apply(ibnr_str,2,table),length) > 1]
+
+### make all values 2 digits
+ibnr_str <- as.data.frame(lapply(ibnr_str, function(x) sprintf("%02d", x)))
+
+#  function to create diploid genotypes by combining samples
+combine_random_rows <- function(df) {
+  # Randomly shuffle the row indices
+  shuffled_indices <- sample(nrow(df))
+  
+  # Rearrange the dataframe with shuffled rows
+  df <- df[shuffled_indices, , drop = FALSE]
+  
+  # Create an empty data frame with the same column names
+  combined_df <- data.frame(matrix(ncol = ncol(df), nrow = nrow(df) / 2))
+  colnames(combined_df) <- colnames(df)
+  
+  # Loop over each column
+  for (i in 1:ncol(df)) {
+    # Combine every two randomly paired rows with a '/' for each column
+    combined_df[, i] <- sapply(seq(1, nrow(df), by = 2), function(j) {
+      return(paste(df[j, i], df[j+1, i], sep = ""))
+    })
+  }
+  
+  # Replace all cells that contain "NA" (even partial matches) with actual NA
+  combined_df[] <- lapply(combined_df, function(x) {
+    x[grepl("NA", x)] <- NA_character_
+    return(x)
+  })
+  
+  # Return the combined data frame
+  return(combined_df)
+}
+ibnr_str_dip <- combine_random_rows(ibnr_str)
+ibnr_str_dip[is.na(ibnr_str_dip)] <- "0000"
+
+# Function to convert haploid data to Genepop format
+convert_to_genepop <- function(diploid_data, output_file, title = "Haploid dataset converted for Genepop") {
+  # Extract locus names
+  loci_names <- colnames(diploid_data)
+  sample_ids <- rownames(diploid_data)
+  # Open file for writing
+  fileConn <- file(output_file, "w")  # "w" ensures a fresh write
+  writeLines(title, fileConn)  # Title line
+  close(fileConn)
+  # Append locus names
+  for (l in loci_names) {
+    cat(l, "\n", file = output_file, append = TRUE)
+  }
+  # Append first population marker
+  cat("Pop\n", file = output_file, append = TRUE)
+  # Append each individual's genotype data
+  for (i in seq_along(sample_ids)) {
+    line <- paste0(sample_ids[i], " , ", paste(diploid_data[i, ], collapse = "\t"))
+    cat(line, "\n", file = output_file, append = TRUE)
+  }
+  message("Genepop file saved as: ", output_file)
+}
+
+ibnr_str_100 <- ibnr_str_dip[sample(ncol(ibnr_str_dip), 100, replace = FALSE)]
+convert_to_genepop(ibnr_str_100, "ibnr_str_rep1_100.txt")
+
+ibnr_str_100 <- ibnr_str_dip[sample(ncol(ibnr_str_dip), 100, replace = FALSE)]
+convert_to_genepop(ibnr_str_100, "ibnr_str_rep2_100.txt")
+
+ibnr_str_100 <- ibnr_str_dip[sample(ncol(ibnr_str_dip), 100, replace = FALSE)]
+convert_to_genepop(ibnr_str_100, "ibnr_str_rep3_100.txt")
+
+ibnr_str_100 <- ibnr_str_dip[sample(ncol(ibnr_str_dip), 100, replace = FALSE)]
+convert_to_genepop(ibnr_str_100, "ibnr_str_rep4_100.txt")
+
+ibnr_str_100 <- ibnr_str_dip[sample(ncol(ibnr_str_dip), 100, replace = FALSE)]
+convert_to_genepop(ibnr_str_100, "ibnr_str_rep5_100.txt")
+
+ibnr_str_100 <- ibnr_str_dip[sample(ncol(ibnr_str_dip), 100, replace = FALSE)]
+convert_to_genepop(ibnr_str_100, "ibnr_str_rep6_100.txt")
+
+ibnr_str_100 <- ibnr_str_dip[sample(ncol(ibnr_str_dip), 100, replace = FALSE)]
+convert_to_genepop(ibnr_str_100, "ibnr_str_rep7_100.txt")
+
+ibnr_str_100 <- ibnr_str_dip[sample(ncol(ibnr_str_dip), 100, replace = FALSE)]
+convert_to_genepop(ibnr_str_100, "ibnr_str_rep8_100.txt")
+
+ibnr_str_100 <- ibnr_str_dip[sample(ncol(ibnr_str_dip), 100, replace = FALSE)]
+convert_to_genepop(ibnr_str_100, "ibnr_str_rep9_100.txt")
+
+ibnr_str_100 <- ibnr_str_dip[sample(ncol(ibnr_str_dip), 100, replace = FALSE)]
+convert_to_genepop(ibnr_str_100, "ibnr_str_rep10_100.txt")
