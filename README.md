@@ -14,3 +14,7 @@ athaliana_plots.R: R script to generate figures for _Arabidopsis thaliana_
 Brachypodium_distachyon_pipeline.md: Pipeline to call genetic methylation variants in _Brachypodium distachyon_ and perform population genetic analyses
 
 bdistachyon_plots.R: R script to generate figures for _Brachypodium distachyon_ 
+
+brachy_pheno.R: R script to generate seed phenotype metrics plot for _Brachypodium distachyon_ 
+
+brachy_trees.R: R script to generate trees based on genetic distances for _Brachypodium distachyon_
