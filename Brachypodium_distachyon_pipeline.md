@@ -831,8 +831,6 @@ tree.R
 ```
 26. Calculate and plot LD decay
 ```
-## popLDdecay
-
 #/proj/popgen/a.ramesh/software/vcftools-vcftools-581c231/bin/vcftools --vcf smp1.2_gbm_maf10.vcf --out smp1.2_gbm_maf10 --freq
 #/proj/popgen/a.ramesh/software/vcftools-vcftools-581c231/bin/vcftools --vcf smp1.2_exon_nongbm_maf10.vcf --out smp1.2_exon_nongbm_maf10 --freq
 
@@ -844,21 +842,8 @@ tree.R
 python3 ld_bin.py smp1.2_maf10_ld_decay.LD.gz smp1.2_maf10_ld_decay.stat 3
 
 ```
-27. Calculate site-pi using vcftools
-```
-# calculate site-pi
 
-vcftools --vcf ./plink/snp1_maf.vcf --site-pi --out ./pi/snp1_maf
-vcftools --vcf ./plink/snp6_maf.vcf --site-pi --out ./pi/snp6_maf
-
-vcftools --vcf ./plink/smp1_maf.vcf --site-pi --out ./pi/smp1_maf
-vcftools --vcf ./plink/smp6_maf.vcf --site-pi --out ./pi/smp6_maf
-
-vcftools --vcf ./plink/dmr1_maf.vcf --site-pi --out ./pi/dmr1_maf
-vcftools --vcf ./plink/dmr6_maf.vcf --site-pi --out ./pi/dmr6_maf
-
-```
-28. Get dmr_pos.list and gene_pos.list in the format chr:start-end for all dmrs that are in gene regions (from bed file)
+27. Get dmr_pos.list and gene_pos.list in the format chr:start-end for all dmrs that are in gene regions (from bed file)
 ```
 library(data.table)
 
@@ -1021,217 +1006,8 @@ dmr_pos.list <- list$chr_start_end
 write.table(dmr_pos.list, file = "dmr_pos.list", quote = F, row.names = F,sep ="\t", eol = "\n", append = TRUE, )
 
 ```
-29. Split SNP vcfs by gene and dmr regions
-```
-bgzip -f snp1_maf.vcf
-tabix -f snp1_maf.vcf.gz
 
-bgzip -f snp6_maf.vcf
-tabix -f snp6_maf.vcf.gz
-
-
-# split vcfs by region
-dos2unix dmr_pos.list
-dos2unix gene_pos.list
-
-### SNPs
-# dmr positions
-cat dmr_pos.list | while read -r line ; do tabix snp1_maf.vcf.gz $line >./group1_snp/dmr_regions/$line.snp.vcf; done
-cat dmr_pos.list | while read -r line ; do tabix snp6_maf.vcf.gz $line >./group6_snp/dmr_regions/$line.snp.vcf; done
-
-# gene positions
-cat gene_pos.list | while read -r line ; do tabix snp1_maf.vcf.gz $line >./group1_snp/gene_regions/$line.snp.vcf; done
-cat gene_pos.list | while read -r line ; do tabix snp6_maf.vcf.gz $line >./group6_snp/gene_regions/$line.snp.vcf; done
-
-
-# count lines and write to file
-# do for both groups
-for file in *vcf ; do wc -l $file >>vcflengths_snp_dmr ; done
-for file in *vcf ; do wc -l $file >>vcflengths_snp_gene ; done
-```
-
-30. For SNPs: get good intervals and remove bad interval files
-```
-#############################################################
-
-#####   SNPs
-
-#############################################################
-
-####### GROUP 1
-
-###### DMR regions
-setwd("C:/Users/Excellaptop/Desktop/stats/snp/group1_snp/dmr_regions/")
-
-vcflengths_snp_dmr <- read.table(file="vcflengths_snp_dmr")
-vcflengths_snp_dmr$V2 <- gsub(".snp.vcf","",vcflengths_snp_dmr$V2)
-colnames(vcflengths_snp_dmr) <- c("numvar","interval")
-vcflengths_snp_dmr$length <- as.numeric(gsub(".*-","", gsub(".*:","",vcflengths_snp_dmr$interval))) - as.numeric(gsub("-.*","", gsub(".*:","",vcflengths_snp_dmr$interval)))
-vcflengths_snp_dmr <- vcflengths_snp_dmr[vcflengths_snp_dmr$numvar < 3,]
-
-write.table(paste("rm ",vcflengths_snp_dmr$interval,".snp.vcf",sep=""),file="bad_intervals.sh",sep="\t",quote=F,row.names = F, col.names = F)
-
-
-vcflengths_snp_dmr <- read.table(file="vcflengths_snp_dmr")
-vcflengths_snp_dmr$V2 <- gsub(".snp.vcf","",vcflengths_snp_dmr$V2)
-colnames(vcflengths_snp_dmr) <- c("numvar","interval")
-vcflengths_snp_dmr$length <- as.numeric(gsub(".*-","", gsub(".*:","",vcflengths_snp_dmr$interval))) - as.numeric(gsub("-.*","", gsub(".*:","",vcflengths_snp_dmr$interval)))
-vcflengths_snp_dmr <- vcflengths_snp_dmr[vcflengths_snp_dmr$numvar >= 3,]
-
-write.table(cbind(paste(vcflengths_snp_dmr$interval,".all.vcf",sep=""),vcflengths_snp_dmr$length),file="goodfiles",sep="\t",quote=F,row.names = F, col.names = F)
-# got 0 here
-
-
-
-###### GENE regions
-setwd("C:/Users/Excellaptop/Desktop/stats/snp/group1_snp/gene_regions/")
-
-vcflengths_snp_gene <- read.table(file="vcflengths_snp_gene")
-vcflengths_snp_gene$V2 <- gsub(".snp.vcf","",vcflengths_snp_gene$V2)
-colnames(vcflengths_snp_gene) <- c("numvar","interval")
-vcflengths_snp_gene$length <- as.numeric(gsub(".*-","", gsub(".*:","",vcflengths_snp_gene$interval))) - as.numeric(gsub("-.*","", gsub(".*:","",vcflengths_snp_gene$interval)))
-vcflengths_snp_gene <- vcflengths_snp_gene[vcflengths_snp_gene$numvar < 3,]
-
-write.table(paste("rm ",vcflengths_snp_gene$interval,".snp.vcf",sep=""),file="bad_intervals.sh",sep="\t",quote=F,row.names = F, col.names = F)
-
-
-vcflengths_snp_gene <- read.table(file="vcflengths_snp_gene")
-vcflengths_snp_gene$V2 <- gsub(".snp.vcf","",vcflengths_snp_gene$V2)
-colnames(vcflengths_snp_gene) <- c("numvar","interval")
-vcflengths_snp_gene$length <- as.numeric(gsub(".*-","", gsub(".*:","",vcflengths_snp_gene$interval))) - as.numeric(gsub("-.*","", gsub(".*:","",vcflengths_snp_gene$interval)))
-vcflengths_snp_gene <- vcflengths_snp_gene[vcflengths_snp_gene$numvar >= 3,]
-
-write.table(cbind(paste(vcflengths_snp_gene$interval,".all.vcf",sep=""),vcflengths_snp_gene$length),file="goodfiles",sep="\t",quote=F,row.names = F, col.names = F)
-
-
-#############################################################
-
-####### GROUP 6
-
-###### DMR regions
-setwd("C:/Users/Excellaptop/Desktop/stats/snp/group6_snp/dmr_regions/")
-
-vcflengths_snp_dmr <- read.table(file="vcflengths_snp_dmr")
-vcflengths_snp_dmr$V2 <- gsub(".snp.vcf","",vcflengths_snp_dmr$V2)
-colnames(vcflengths_snp_dmr) <- c("numvar","interval")
-vcflengths_snp_dmr$length <- as.numeric(gsub(".*-","", gsub(".*:","",vcflengths_snp_dmr$interval))) - as.numeric(gsub("-.*","", gsub(".*:","",vcflengths_snp_dmr$interval)))
-vcflengths_snp_dmr <- vcflengths_snp_dmr[vcflengths_snp_dmr$numvar < 3,]
-
-write.table(paste("rm ",vcflengths_snp_dmr$interval,".snp.vcf",sep=""),file="bad_intervals.sh",sep="\t",quote=F,row.names = F, col.names = F)
-
-
-vcflengths_snp_dmr <- read.table(file="vcflengths_snp_dmr")
-vcflengths_snp_dmr$V2 <- gsub(".snp.vcf","",vcflengths_snp_dmr$V2)
-colnames(vcflengths_snp_dmr) <- c("numvar","interval")
-vcflengths_snp_dmr$length <- as.numeric(gsub(".*-","", gsub(".*:","",vcflengths_snp_dmr$interval))) - as.numeric(gsub("-.*","", gsub(".*:","",vcflengths_snp_dmr$interval)))
-vcflengths_snp_dmr <- vcflengths_snp_dmr[vcflengths_snp_dmr$numvar >= 3,]
-
-write.table(cbind(paste(vcflengths_snp_dmr$interval,".all.vcf",sep=""),vcflengths_snp_dmr$length),file="goodfiles",sep="\t",quote=F,row.names = F, col.names = F)
-# 0 here
-
-
-###### GENE regions
-setwd("C:/Users/Excellaptop/Desktop/stats/snp/group6_snp/gene_regions/")
-
-vcflengths_snp_gene <- read.table(file="vcflengths_snp_gene")
-vcflengths_snp_gene$V2 <- gsub(".snp.vcf","",vcflengths_snp_gene$V2)
-colnames(vcflengths_snp_gene) <- c("numvar","interval")
-vcflengths_snp_gene$length <- as.numeric(gsub(".*-","", gsub(".*:","",vcflengths_snp_gene$interval))) - as.numeric(gsub("-.*","", gsub(".*:","",vcflengths_snp_gene$interval)))
-vcflengths_snp_gene <- vcflengths_snp_gene[vcflengths_snp_gene$numvar < 3,]
-
-write.table(paste("rm ",vcflengths_snp_gene$interval,".snp.vcf",sep=""),file="bad_intervals.sh",sep="\t",quote=F,row.names = F, col.names = F)
-
-
-vcflengths_snp_gene <- read.table(file="vcflengths_snp_gene")
-vcflengths_snp_gene$V2 <- gsub(".snp.vcf","",vcflengths_snp_gene$V2)
-colnames(vcflengths_snp_gene) <- c("numvar","interval")
-vcflengths_snp_gene$length <- as.numeric(gsub(".*-","", gsub(".*:","",vcflengths_snp_gene$interval))) - as.numeric(gsub("-.*","", gsub(".*:","",vcflengths_snp_gene$interval)))
-vcflengths_snp_gene <- vcflengths_snp_gene[vcflengths_snp_gene$numvar >= 3,]
-
-write.table(cbind(paste(vcflengths_snp_gene$interval,".all.vcf",sep=""),vcflengths_snp_gene$length),file="goodfiles",sep="\t",quote=F,row.names = F, col.names = F)
-
-# got 2 here
-
-
-### dos2unix bad_intervals.sh files and run in linux
-# ./bad_intervals.sh
-
-```
-31. For SNPs: calculate D and Pi for regions
-```
-####### calculate Tajima's D and pi
-
-# Group 1
-
-setwd("/mnt/c/Users/Excellaptop/Desktop/stats/snp/group1_snp/gene_regions/")
-
-goodfiles1 <- read.table(file="./goodfiles")
-for(f in 1:nrow(goodfiles1)){
-  i=0
-  while(i<200){
-    print(i)
-    i <- i + 1
-    system(paste("/mnt/c/Users/Excellaptop/ubuntu/softwares/vcftools/src/cpp/vcftools --vcf ",goodfiles1$V1[f]," --out tmp --TajimaD ",goodfiles1$V2[f]+i,sep=""))
-    tmpfile <- read.table(file="tmp.Tajima.D",header = T)
-    print(nrow(tmpfile))
-    if (nrow(tmpfile) == 1) {
-      system(paste("/mnt/c/Users/Excellaptop/ubuntu/softwares/vcftools/src/cpp/vcftools --vcf ",goodfiles1$V1[f]," --out ",goodfiles1$V1[f]," --TajimaD ",goodfiles1$V2[f]+i,sep=""))
-      break
-    }
-  }
-}
-
-for(f in 1:nrow(goodfiles1)){
-  i=0
-  while(i<200){
-    print(i)
-    i <- i + 1
-    system(paste("/mnt/c/Users/Excellaptop/ubuntu/softwares/vcftools/src/cpp/vcftools --vcf ",goodfiles1$V1[f]," --out tmp --window-pi ",goodfiles1$V2[f]+i,sep=""))
-    tmpfile <- read.table(file="tmp.windowed.pi",header = T)
-    print(nrow(tmpfile))
-    if (nrow(tmpfile) == 1) {
-      system(paste("/mnt/c/Users/Excellaptop/ubuntu/softwares/vcftools/src/cpp/vcftools --vcf ",goodfiles1$V1[f]," --out ",goodfiles1$V1[f]," --window-pi ",goodfiles1$V2[f]+i,sep=""))
-      break
-    }
-  }
-}
-
-# Group 6
-
-setwd("/mnt/c/Users/Excellaptop/Desktop/stats/snp/group6_snp/gene_regions/")
-
-goodfiles6 <- read.table(file="./goodfiles")
-for(f in 1:nrow(goodfiles6)){
-  i=0
-  while(i<200){
-    print(i)
-    i <- i + 1
-    system(paste("/mnt/c/Users/Excellaptop/ubuntu/softwares/vcftools/src/cpp/vcftools --vcf ",goodfiles6$V1[f]," --out tmp --TajimaD ",goodfiles6$V2[f]+i,sep=""))
-    tmpfile <- read.table(file="tmp.Tajima.D",header = T)
-    print(nrow(tmpfile))
-    if (nrow(tmpfile) == 1) {
-      system(paste("/mnt/c/Users/Excellaptop/ubuntu/softwares/vcftools/src/cpp/vcftools --vcf ",goodfiles6$V1[f]," --out ",goodfiles6$V1[f]," --TajimaD ",goodfiles6$V2[f]+i,sep=""))
-      break
-    }
-  }
-}
-
-for(f in 1:nrow(goodfiles6)){
-  i=0
-  while(i<200){
-    print(i)
-    i <- i + 1
-    system(paste("/mnt/c/Users/Excellaptop/ubuntu/softwares/vcftools/src/cpp/vcftools --vcf ",goodfiles6$V1[f]," --out tmp --window-pi ",goodfiles6$V2[f]+i,sep=""))
-    tmpfile <- read.table(file="tmp.windowed.pi",header = T)
-    print(nrow(tmpfile))
-    if (nrow(tmpfile) == 1) {
-      system(paste("/mnt/c/Users/Excellaptop/ubuntu/softwares/vcftools/src/cpp/vcftools --vcf ",goodfiles6$V1[f]," --out ",goodfiles6$V1[f]," --window-pi ",goodfiles6$V2[f]+i,sep=""))
-      break
-    }
-  }
-}
-```
-32. For SMPs: split reference in gene regions and dmr regions
+28. For SMPs: split reference in gene regions and dmr regions
 ```
 cat ./gene_pos.list | while read -r line ; do samtools faidx GCF_000005505.3_Brachypodium_distachyon_v3.0_genomic_chromnames_rmscaff_chrnames.fna $line >>genes.fasta; done
 # in conda environment
@@ -1249,7 +1025,7 @@ cd dmr_fasta/
 #ls *fa >filenames_dmr
 for file in *fa ; do ls $file >>filenames_dmr ; done
 ```
-33. For SMPs: Count cytosines
+29. For SMPs: Count cytosines
 ```
 library("methimpute")
 
@@ -1296,7 +1072,7 @@ for (f in 1:length(files)){
 cytosine_count <- cytosine_count[-c(1),]
 write.table(cytosine_count,file="cytosine_count_dmr.txt",row.names=F, col.names=F,quote=F,sep="\t")
 ```
-34. For SMPs: split vcfs
+30. For SMPs: split vcfs
 ```
 bgzip -f smp1_maf.vcf
 tabix -f smp1_maf.vcf.gz
@@ -1316,7 +1092,7 @@ cat gene_pos.list | while read -r line ; do tabix smp6_maf.vcf.gz $line >./group
 for file in *vcf ; do wc -l $file >>vcflengths_smp_dmr ; done
 for file in *vcf ; do wc -l $file >>vcflengths_smp_gene ; done
 ```
-35. For SMPs: Get good intervals and remove other files
+31. For SMPs: Get good intervals and remove other files
 ```
 #############################################################
 
@@ -1428,7 +1204,7 @@ write.table(merged1,file="good_intervals",sep="\t",quote=F,row.names = F, col.na
 merged4 <- merged[!(merged$numvar >= 3 & merged$prop > 0.05),]
 write.table(paste("rm ",merged4$interval,".input.txt",sep=""),file="bad_intervals.sh",sep="\t",quote=F,row.names = F, col.names = F)
 ```
-36. For SMPs: Get alpha
+32. For SMPs: Get alpha
 >*repeat for both groups and gene and dmr regions*
 ```
 ## group1_smp/gene_regions
@@ -1445,7 +1221,7 @@ cd ../
 perl alpha_estimation.pl -dir ./input -output  alpha_Dm_brachy -length_list length_list
 ```
 
-37. For SMPs: impute NA because Dm test script interpretes NA as 0
+33. For SMPs: impute NA because Dm test script interpretes NA as 0
 ```
 #impute.R
 impute <- function(inputfile){
@@ -1512,7 +1288,7 @@ for(f in 1:nrow(list)){
   write.table(file_imputed, file = filename, sep = "\t", quote = F , col.names = F, row.names = F)
 }
 ```
-38. For SMPs: get Dm estimates for all groups and regions
+34. For SMPs: get Dm estimates for all groups and regions
 ```
 # in R (good_intervals_Dm.R)
 library(dplyr)
@@ -1539,16 +1315,7 @@ cd impute/
 cat good_intervals_alpha |  while read -r value1 value2 value3 value4 value5 remainder ;  do perl ../Dm_test_new.pl -input $value1.input.imputed.txt -output $value1.Dm_group1_dmr.txt -length $value2 -alpha $value5  ; done
 ```
 
-39. Calculate admixture plots for snps, smps and dmrs
-```
-### admixture
-cd ./admixture/
-for K in 2 3 4 5 6 7 8 9 10 ; do /mnt/c/Users/Excellaptop/ubuntu/softwares/admixture_linux-1.3.0/admixture32 --cv snp29_maf.bed $K | tee log${K}.out; done
-grep -h CV log*.out
-grep -h CV log*.out|awk -F '[=):]' '{print $2"\t"$4}'|sed '1i\\K\tCV_error' > CV_for_plot_snp.txt
-```
-
-40. filtering 10% maf
+35. filtering 10% maf
 ```
 ### subgroups
 # 10% filtering
@@ -1574,7 +1341,7 @@ plink --bfile ./dmr6_maf10 --recode vcf-iid -out ./dmr6_maf10 --keep-allele-orde
 
 grep -v '^#' ./plink/snp29_maf.vcf | wc -l
 ```
-41. get subgroup vcfs
+36. get subgroup vcfs
 ```
 plink --vcf snp1_na.recode.vcf --make-bed --out ./snp1_maf100 --set-missing-var-ids @:# --keep-allele-order
 plink --vcf smp1_na.recode.vcf --make-bed --out ./smp1_maf100 --set-missing-var-ids @:# --keep-allele-order
@@ -1610,43 +1377,7 @@ plink --bfile ./dmr1.2_maf10 --recode vcf-iid -out ./dmr1.2_maf10 --keep-allele-
 
 ```
 
-42. sitepi and D with 10% maf
-```
-# calculate site-pi and D with 10% filtering
-
-vcftools --vcf ./snp1_maf10.vcf --site-pi --out ./pi/snp1_maf10
-vcftools --vcf ./snp1.1_maf10.vcf --site-pi --out ./pi/snp1.1_maf10
-vcftools --vcf ./snp1.2_maf10.vcf --site-pi --out ./pi/snp1.2_maf10
-vcftools --vcf ./snp6_maf10.vcf --site-pi --out ./pi/snp6_maf10
-
-vcftools --vcf ./smp1_maf10.vcf --site-pi --out ./pi/smp1_maf10
-vcftools --vcf ./smp1.1_maf10.vcf --site-pi --out ./pi/smp1.1_maf10
-vcftools --vcf ./smp1.2_maf10.vcf --site-pi --out ./pi/smp1.2_maf10
-vcftools --vcf ./smp6_maf10.vcf --site-pi --out ./pi/smp6_maf10
-
-vcftools --vcf ./dmr1_maf10.vcf --site-pi --out ./pi/dmr1_maf10
-vcftools --vcf ./dmr1.1_maf10.vcf --site-pi --out ./pi/dmr1.1_maf10
-vcftools --vcf ./dmr1.2_maf10.vcf --site-pi --out ./pi/dmr1.2_maf10
-vcftools --vcf ./dmr6_maf10.vcf --site-pi --out ./pi/dmr6_maf10
-```
-43. Fst
-```
-vcf-query -l smp1_maf.vcf | grep 'BdTR1' > pop1.1.txt
-vcf-query -l smp1_maf.vcf | grep 'BdTR2' > pop1.1.txt
-
-vcftools --vcf smp1_maf.vcf --weir-fst-pop pop1.1.txt --weir-fst-pop pop1.2.txt --out smp1.1_vs_smp1.2
-vcftools --vcf dmr1_maf.vcf --weir-fst-pop pop1.1.txt --weir-fst-pop pop1.2.txt --out dmr1.1_vs_dmr1.2
-vcftools --vcf snp1_maf.vcf --weir-fst-pop pop1.1.txt --weir-fst-pop pop1.2.txt --out snp1.1_vs_snp1.2
-```
-44. randomly downsample by 50% of variants
-```
-(cat smp29_maf.vcf | head -n 10000 | grep ^# ; grep -v ^# smp29_maf.vcf| shuf -n 6947 | LC_ALL=C sort -k1,1V -k2,2n) > smp29_small.vcf
-(cat dmr29_maf.vcf | head -n 10000 | grep ^# ; grep -v ^# dmr29_maf.vcf| shuf -n 1161 | LC_ALL=C sort -k1,1V -k2,2n) > dmr29_small.vcf
-
-/mnt/c/Users/Excellaptop/ubuntu/softwares/VCF2Dis-1.50/bin/VCF2Dis -InPut  ./smp29_small.vcf  -OutPut ./smp29_small_dis.mat
-/mnt/c/Users/Excellaptop/ubuntu/softwares/VCF2Dis-1.50/bin/VCF2Dis -InPut  ./dmr29_small.vcf  -OutPut ./dmr29_small_dis.mat
-```
-45. Repeat steps to generate new SMP vcf
+37. Repeat steps to generate new SMP vcf
 >*Repeat step 17 with lower threshold (>4)*
 ```
 library(dplyr)
@@ -1889,86 +1620,7 @@ test <-fread("smp6_thresh4_unfiltered.vcf")
 
 ## add header to vcf files
 ```
-
-46. get SNP invariants
-```
-bcftools view -i 'FMT/DP>=5 & QUAL>=30'
-gatk --java-options "-Xmx4g" GenotypeGVCFs -R /data/proj2/popgen/a.zauchner/brachy/GCF_000005505.3/GCF_000005505.3_Brachypodium_distachyon_v3.0_genomic.fna -all-sites -V brachypodium.all.g.vcf.gz -O brachypodium.var_invar.vcf.gz
-vcftools --gzvcf brachypodium.var_invar.vcf.gz --recode --maf 0 --out brachypodium.var_invar_maf0
-```
->*make vcf*
-```
-snp_invar <- fread("brachypodium.var_invar.filtered.maf0.recode.vcf", header = T)
-snp_invar$FILTER <- gsub(".", "PASS", snp_invar$FILTER)
-
-snp_invar_29 <- snp_invar[,-10]
-colnames(snp_invar_29)[10:length(colnames(snp_invar_29))] <- gsub("_marked.bam", "", colnames(snp_invar_29)[10:length(colnames(snp_invar_29))])
-fwrite(snp_invar_29, file = "snp_invar_29.vcf", quote = F, row.names = F,sep ="\t", eol = "\n")
-
-colnames(snp_invar_29) %in% df1$V2
-
-snp_invar_grp1 <- snp_invar_29[,-c(10:16)]
-colnames(snp_invar_grp1) %in% df1$V2
-fwrite(snp_invar_grp1,file="snp_invar_1.vcf",quote = F, row.names = F,sep ="\t", eol = "\n")
-
-snp_invar_grp6 <- snp_invar_29[,-c(17:38)]
-colnames(snp_invar_grp6) %in% df6$V2
-fwrite(snp_invar_grp6,file="snp_invar_6.vcf",quote = F, row.names = F,sep ="\t", eol = "\n")
-```
->*remove heterozygoes*
-```
-library(data.table)
-library(dplyr)
-
-snp29.unfiltered <- fread(input = "snp29_invar_unfiltered.vcf")
-snp1.unfiltered <- fread(input = "snp1_invar_unfiltered.vcf")
-snp6.unfiltered <- fread(input = "snp6_invar_unfiltered.vcf")
-
-
-snp6 <- snp6.unfiltered %>%
-  mutate_all(~gsub("0/1", "./.", .))
-snp6 <- snp6 %>%
-  mutate_all(~gsub("1/0", "./.", .))
-snp6 <- snp6 %>%
-  mutate_all(~gsub("0\\|1", "./.", .))
-snp6 <- snp6 %>%
-  mutate_all(~gsub("1\\|0", "./.", .))
-snp6 <- snp6 %>%
-  mutate_all(~gsub("0\\|0", "0/0", .))
-snp6 <- snp6 %>%
-  mutate_all(~gsub("1\\|1", "1/1", .))
-
-snp1 <- snp1.unfiltered %>%
-  mutate_all(~gsub("0/1", "./.", .))
-snp1 <- snp1 %>%
-  mutate_all(~gsub("1/0", "./.", .))
-snp1 <- snp1 %>%
-  mutate_all(~gsub("0\\|1", "./.", .))
-snp1 <- snp1 %>%
-  mutate_all(~gsub("1\\|0", "./.", .))
-snp1 <- snp1 %>%
-  mutate_all(~gsub("0\\|0", "0/0", .))
-snp1 <- snp1 %>%
-  mutate_all(~gsub("1\\|1", "1/1", .))
-
-snp29 <- snp29.unfiltered %>%
-  mutate_all(~gsub("0/1", "./.", .))
-snp29 <- snp29 %>%
-  mutate_all(~gsub("1/0", "./.", .))
-snp29 <- snp29 %>%
-  mutate_all(~gsub("0\\|1", "./.", .))
-snp29 <- snp29 %>%
-  mutate_all(~gsub("1\\|0", "./.", .))
-snp29 <- snp29 %>%
-  mutate_all(~gsub("0\\|0", "0/0", .))
-snp29 <- snp29 %>%
-  mutate_all(~gsub("1\\|1", "1/1", .))
-
-fwrite(snp1, file = "snp1_invar_unfiltered_nohet.vcf", quote = F, eol = "\n", sep = "\t", row.names = F)
-fwrite(snp6, file = "snp6_invar_unfiltered_nohet.vcf", quote = F, eol = "\n", sep = "\t", row.names = F)
-fwrite(snp29, file = "snp29_invar_unfiltered_nohet.vcf", quote = F, eol = "\n", sep = "\t", row.names = F)
-```
-47. get .bed files for noncoding regions, gbM genes and exons
+38. get .bed files for noncoding regions, gbM genes and exons
 >**
 ```
 grep 'exon' genomic.gff | cut -f 1,4,5 > exon_pos.bed
@@ -1992,7 +1644,7 @@ sed -e 's/\t/:/' -e  's/\t/-/' gbm_genes.bed >gbm_genes.list
 # change chromosome names to match vcfs -> gbm_genes2.bed (1, 2, 3, etc.) and gbm_genes3.bed (NC_016131, NC_016132, etc.)
 ```
 
-48. filtering of VCFs
+39. filtering of VCFs
 ```
 # filtering of vcfs for gBM SMP, gBM DMR and coding and noncoding SNPs, and invariants
 
@@ -2250,7 +1902,7 @@ plink --bfile ./dmr1.2_exon_nongbm_maf10 --recode vcf-iid -out ./dmr1.2_exon_non
 
 ```
 
-49. Calculate Theta Pi and Dm
+40. Calculate Theta Pi and Dm
 >*split file into exon regions*
 ```
 cat ./exons2.list | while read -r line ; do samtools faidx GCF_000005505.3_Brachypodium_distachyon_v3.0_genomic_chromnames_rmscaff_chrnames.fna $line >>exons.fasta; done
@@ -2409,7 +2061,7 @@ write.table(e, file = "Dm_theta_exons_group1.txt", quote = F, sep = "\t", row.na
 #repeat for other groups
 ```
 
-50. Calculate mSFS.
+41. Calculate mSFS.
 
 ```
 /data/proj2/popgen/a.ramesh/software/vcftools/src/cpp/vcftools --vcf smp1.2_gbm_maf10.vcf --out smp1.2_gbm_maf10 --freq
@@ -2417,12 +2069,12 @@ write.table(e, file = "Dm_theta_exons_group1.txt", quote = F, sep = "\t", row.na
 
 ```
 
-51. Add header to variant plus invariant vcf
+42. Add header to variant plus invariant vcf
 ```
 cat vcf_header brachy_meth_var_invar.vcf >brachy_meth_var_invar_all.vcf
 ```
 
-52. get number of invariant sites for all sites and for gbm sites only.
+43. get number of invariant sites for all sites and for gbm sites only.
 
 ```
 cp gbm_genes.bed gbm_genes_bd.bed 
@@ -2439,10 +2091,11 @@ cp gbm_genes.bed gbm_genes_bd.bed
 
 ```
 
-53. Generate multihetsep files for demographic inference. 
+44. Generate multihetsep files for demographic inference. 
 
 ```
 /proj/popgen/a.ramesh/software/vcftools-vcftools-581c231/bin/vcftools --vcf brachy_meth_var_invar_all.vcf --recode  --out group1.2_smps_5mb --keep group1.2 --max-missing 0.9 --bed popgen5mb2_bd.bed
+
 
 cd smps_group1.2/
 /proj/popgen/a.ramesh/software/htslib-1.16/bgzip -f group1.2_smps_5mb.recode.vcf
