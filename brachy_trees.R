@@ -29,7 +29,7 @@ tip.subgroup$subgroup <- c(rep("group_1.2",12),rep("group_1.1",10))
 tip.subgroup <- tip.subgroup[,-2]
 
 
-tip.subgroup2 <- tip.subgroup[-c(18,19,21,22),]
+tip.subgroup2 <- tip.subgroup[-c(18,19,21,22),] # only central region samples BdTR1e, BdTR1h, BdTR1j, BdTR1k, BdTR1m, BdTR1n of group 1.1
 
 #### gBM SMP tree central only
 smp_gbm_tree<-read.tree("./for_filtering/distance_matrix/smp1_central_gbm_dis_mat_fastme-tree.nwk")
@@ -80,7 +80,7 @@ ggtree(tree.a14,
 
 
 ###############################################
-#trees without group 6
+#trees all of group 1
 
 #### gBM SMP tree
 smp_gbm_tree<-read.tree("smp1_gbm_dis_mat_fastme-tree.nwk")
@@ -116,60 +116,6 @@ ggtree(tree.a10,
   geom_treescale(x = -0.11, y = -0.15, width = NULL, offset = 0.02, color = "black", linesize = 0.5, fontsize = 3.88, family = "sans")+
   labs(title = "Neighbour-joining tree gBM DMRs")+
   coord_cartesian(clip = "on", expand = TRUE, xlim = c(-0.2, 0.5), ylim = c(-0.15, 0.4))+
-  theme(legend.position = "bottom")+
-  #  geom_tippoint()+
-  #  theme(plot.title = element_text(hjust = 1))+
-  theme(legend.text = element_text(face="italic",size=12))+
-  theme(legend.title = element_blank())+
-  scale_colour_manual(labels = c("Group 1.1","Group 1.2"), values = c("#FDAE61","#ABDDA4"), breaks = c("group_1.1","group_1.2"))+
-  guides(color = guide_legend(override.aes = list(label = "\u25A0", size = 7)))+
-  theme(plot.title = element_text(size=18))+
-  theme(plot.subtitle = element_text(size=14))
-
-
-
-
-
-
-#########################################
-#trees without group 6 and only central samples BdTR1e, BdTR1h, BdTR1j, BdTR1k, BdTR1m, BdTR1n of group 1.1
-
-tip.subgroup2 <- tip.subgroup[-c(18,19,21,22),]
-
-#### gBM SMP tree
-smp_gbm_tree<-read.tree("smp1_central_gbm_dis_mat_fastme-tree.nwk")
-tree.a11 <- full_join(smp_gbm_tree,tip.subgroup2,by="label")
-ggtree(tree.a11, 
-       layout = "ape",
-       size=0.6,
-       aes(color=subgroup), show.legend=F)+
-  geom_tiplab(size=5,face="italic")+
-  geom_treescale(x = -0.11, y = -0.15, width = NULL, offset = 0.02, color = "black", linesize = 0.5, fontsize = 3.88, family = "sans")+
-  labs(title = "Neighbour-joining tree gBM SMPs")+
-  coord_cartesian(clip = "on", expand = TRUE, xlim = c(-0.2, 0.5), ylim = c(-0.15, 0.4))+
-  theme(legend.position = "bottom")+
-  #  geom_tippoint()+
-  #  theme(plot.title = element_text(hjust = 1))+
-  theme(legend.text = element_text(face="italic",size=12))+
-  theme(legend.title = element_blank())+
-  scale_colour_manual(labels = c("Group 1.1","Group 1.2"), values = c("#FDAE61","#ABDDA4"), breaks = c("group_1.1","group_1.2"))+
-  guides(color = guide_legend(override.aes = list(label = "\u25A0", size = 7)))+
-  theme(plot.title = element_text(size=18))+
-  theme(plot.subtitle = element_text(size=14))
-
-
-
-#### gBM DMR tree
-dmr_gbm_tree<-read.tree("dmr1_central_gbm_dis_mat_fastme-tree.nwk")
-tree.a12 <- full_join(dmr_gbm_tree,tip.subgroup2,by="label")
-ggtree(tree.a12, 
-       layout = "ape",
-       size=0.5,
-       aes(color=subgroup), show.legend=F)+
-  geom_tiplab(size=5,face="italic")+
-  geom_treescale(x = -0.11, y = -0.1, width = NULL, offset = 0.02, color = "black", linesize = 0.5, fontsize = 3.88, family = "sans")+
-  labs(title = "Neighbour-joining tree gBM DMRs")+
-  coord_cartesian(clip = "on", expand = TRUE, xlim = c(-0.2, 0.5), ylim = c(-0.1, 0.45))+
   theme(legend.position = "bottom")+
   #  geom_tippoint()+
   #  theme(plot.title = element_text(hjust = 1))+
