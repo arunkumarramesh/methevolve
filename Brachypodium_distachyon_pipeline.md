@@ -315,7 +315,7 @@ print(context$ID[1])
 cov_context <- inner_join(cov,context[c(3,6:8)],by="ID")
 dim(cov_context)
 cov_context$chromosome <- gsub("_N","N", gsub(gsub(".wgbs_bismark_hisat2.deduplicated.bismark.cov","",covfile$V1)[1],"",cov_context$chromosome))
-cov_context <- cov_context[cov_context$count.methylated + cov_context$count.unmethylated > 9, ]
+cov_context <- cov_context[cov_context$count.methylated + cov_context$count.unmethylated > 4, ]
 
 cov_context$ID <- paste(cov_context$chromosome,cov_context$position,sep = "-")
 cov_context$count.total <- cov_context$count.methylated + cov_context$count.unmethylated
@@ -327,6 +327,7 @@ print(noncoversionrate)
 rm(cov)
 rm(context)
 
+#cov_context <- cov_context[cov_context$count.total > 4,]
 
 b <- apply(cov_context[c(5,11)], 1, binom.test, p = noncoversionrate, alternative = c("greater"))
 cov_context$pval <- do.call(rbind,lapply(b,function(v){v$p.value}))
@@ -365,7 +366,7 @@ for (i in 2:nrow(covfile)){
   cov_context <- inner_join(cov,context[c(3,6:8)],by="ID")
   dim(cov_context)
   cov_context$chromosome <- gsub("_N","N", gsub(gsub(".wgbs_bismark_hisat2.deduplicated.bismark.cov","",covfile$V1)[i],"",cov_context$chromosome))
-  cov_context <- cov_context[cov_context$count.methylated + cov_context$count.unmethylated > 9, ]
+  cov_context <- cov_context[cov_context$count.methylated + cov_context$count.unmethylated > 4, ]
   
   cov_context$ID <- paste(cov_context$chromosome,cov_context$position,sep = "-")
   cov_context$count.total <- cov_context$count.methylated + cov_context$count.unmethylated
@@ -377,6 +378,7 @@ for (i in 2:nrow(covfile)){
   rm(cov)
   rm(context)
 
+  #cov_context <- cov_context[cov_context$count.total > 4,]
   
   b <- apply(cov_context[c(5,11)],1,binom.test,p = noncoversionrate, alternative = c("greater"))
   cov_context$pval <- do.call(rbind,lapply(b,function(v){v$p.value}))
@@ -403,17 +405,15 @@ for (i in 2:nrow(covfile)){
 
 #cov_context2$chromosome <- gsub("-.*","",cov_context2$ID)
 #cov_context2$position   <- as.numeric(gsub(".*-","",cov_context2$ID))
-write.table(cov_context2,file="cov_context3_all.txt",row.names = F)
-
+write.table(cov_context2,file="cov_context3_all_thresh4.txt",row.names = F)
 ```
-
-18. Make vcfs
+18. make vcfs
 ```
 library(dplyr)
 library(ggplot2)
 library(data.table)
 
-cov_context3 <- fread(file="cov_context3_all.txt",header=T)
+cov_context3 <- fread(file="cov_context3_all_thresh4.txt",header=T)
 na_count <- apply(cov_context3[,6:ncol(cov_context3)], 1, function(x) sum(is.na(x)))
 na_count <- na_count/ncol(cov_context3[,6:ncol(cov_context3)])
 cov_context3 <- cov_context3[na_count < 0.5,] # change to appropriate number
@@ -434,7 +434,7 @@ cov_context3 <- cov_context3[,-c(1:5)]
 cov_context3[cov_context3 == "U"] <- "0/0"
 cov_context3[cov_context3 == "M"] <- "1/1"
 cov_context3[is.na(cov_context3)] <- "./."
-fwrite(cbind(meta,cov_context3),file="brachy_meth.vcf",quote = F, row.names = F,sep="\t")
+fwrite(cbind(meta,cov_context3),file="brachy_meth.thresh4.vcf",quote = F, row.names = F,sep="\t")
 
 meta2 <- cov_context4[,1:3]
 colnames(meta2) <- c("#CHROM","POS","ID")
@@ -448,8 +448,60 @@ cov_context4 <- cov_context4[,-c(1:5)]
 cov_context4[cov_context4 == "U"] <- "0/0"
 cov_context4[cov_context4 == "M"] <- "1/1"
 cov_context4[is.na(cov_context4)] <- "./."
-fwrite(cbind(meta2,cov_context4),file="brachy_meth_var_invar.vcf",quote = F, row.names = F,sep="\t")
+fwrite(cbind(meta2,cov_context4),file="brachy_meth_var_invar.thresh4.vcf",quote = F, row.names = F,sep="\t")
+
+################
+df1 <- fread("group1_names", header = F, drop = "V1")
+
+smp <- fread("brachy_meth.thresh4.vcf", header = T)
+smp_29 <- smp[,-11]
+fwrite(smp_29, file = "smp_29_thresh4.vcf", quote = F, row.names = F,sep ="\t", eol = "\n")
+
+colnames(smp_29) %in% df1$V2
+
+smp_grp1 <- smp_29[,-c(10:16)]
+colnames(smp_grp1) %in% df1$V2
+fwrite(smp_grp1,file="smp_grp1_thresh4.vcf",quote = F, row.names = F,sep ="\t", eol = "\n")
+
 ```
+>*cleanup vcfs*
+```
+library(data.table)
+library(dplyr)
+
+# read in vcf files
+
+smp1 <- fread("smp_grp1_thresh4.vcf")
+
+
+# remove plastid
+smp1 <- dplyr::filter(smp1, `#CHROM` != "NC_011032.1")
+
+# change chromosome names to 1, 2, etc. in #CHROM and ID columns
+
+
+## smp
+
+smp1$`#CHROM` <- gsub("NC_016131.3", "1", smp1$`#CHROM`)
+smp1$`#CHROM` <- gsub("NC_016132.3", "2", smp1$`#CHROM`)
+smp1$`#CHROM` <- gsub("NC_016133.3", "3", smp1$`#CHROM`)
+smp1$`#CHROM` <- gsub("NC_016134.3", "4", smp1$`#CHROM`)
+smp1$`#CHROM` <- gsub("NC_016135.3", "5", smp1$`#CHROM`)
+smp1$ID <- gsub("NC_016131.3-", "1:", smp1$ID)
+smp1$ID <- gsub("NC_016132.3-", "2:", smp1$ID)
+smp1$ID <- gsub("NC_016133.3-", "3:", smp1$ID)
+smp1$ID <- gsub("NC_016134.3-", "4:", smp1$ID)
+smp1$ID <- gsub("NC_016135.3-", "5:", smp1$ID)
+
+
+# write to file again
+fwrite(smp1, file = "smp1_thresh4_unfiltered.vcf", quote = F, sep = "\t", eol = "\n")
+
+test <-fread("smp1_thresh4_unfiltered.vcf")
+
+## add header to vcf files
+```
+
 
 19. get DMRs with jDMR
 ```
@@ -470,7 +522,7 @@ out.filename <- as.character(gsub(".wgbs_bismark_hisat2.deduplicated.CpG_report"
 fwrite(data, file = out.filename, eol = "\n", sep = "\t", row.names = F, col.names = F)
 }
 
-#data_after <- fread("BdTR11i_CpG_report.txt", header = TRUE)
+#data_after <- fread("BdTR1a_CpG_report.txt", header = TRUE)
 
 ### run jDMR
 
@@ -490,7 +542,7 @@ reportfiles <- read.table(file = "reportfiles") # reportfiles are context files 
 
 for(i in 1:nrow(reportfiles)){
 bismark.data <- importBismark(reportfiles[i,])
-#bismark.data <- importBismark("BdTR11i_CpG_report.txt")
+#bismark.data <- importBismark("BdTR1a_CpG_report.txt")
 
 distcor <- distanceCorrelation(bismark.data, separate.contexts = TRUE)
 fit <- estimateTransDist(distcor)
@@ -640,12 +692,11 @@ lengths <- lengths[!duplicated(lengths),]
 write.table(lengths,file="bd_dmrs_lengths.txt",row.names = F, quote = F,sep="\t")
 ```
 
-21. Make vcfs for group 1, group 6 and all 29 (30 minus reference Bd21) for SNPs, SMPs and DMRs each
+21. Make vcfs for group 1 for SNPs, SMPs and DMRs
 ```
 # get list with samplenames and group
 setwd("G:/Meine Ablage/Master/RStudio/Thesis/")
 df1 <- fread("group1_names", header = F, drop = "V1")
-df6 <- fread("group6_names", header = F, drop = "V1")
 
 dmr_30 <- fread("bd_dmrs_dip.vcf", skip = "##")
 dmr_29 <- dmr_30[,-10]
@@ -655,11 +706,6 @@ colnames(dmr_29) %in% df1$V2
 dmr_grp1 <- dmr_29[,-c(10:16)]
 colnames(dmr_grp1) %in% df1$V2
 fwrite(dmr_grp1,file="bd_dmrs_dip1.vcf",quote = F, row.names = F,sep ="\t", eol = "\n")
-#add header
-
-dmr_grp6 <- dmr_29[,-c(17:38)]
-colnames(dmr_grp6) %in% df6$V2
-fwrite(dmr_grp6,file="bd_dmrs_dip6.vcf",quote = F, row.names = F,sep ="\t", eol = "\n")
 #add header
 
 
@@ -679,10 +725,6 @@ snp_grp1 <- snp_29[,-c(10:16)]
 colnames(snp_grp1) %in% df1$V2
 fwrite(snp_grp1,file="snp_grp1.vcf",quote = F, row.names = F,sep ="\t", eol = "\n")
 
-snp_grp6 <- snp_29[,-c(17:38)]
-colnames(snp_grp6) %in% df6$V2
-fwrite(snp_grp6,file="snp_grp6.vcf",quote = F, row.names = F,sep ="\t", eol = "\n")
-
 setwd("C:/Users/Excellaptop/Desktop/data/vcfs")
 
 ### smps
@@ -697,17 +739,11 @@ smp_grp1 <- smp_29[,-c(10:16)]
 colnames(smp_grp1) %in% df1$V2
 fwrite(smp_grp1,file="smp_grp1.vcf",quote = F, row.names = F,sep ="\t", eol = "\n")
 
-smp_grp6 <- smp_29[,-c(17:38)]
-colnames(smp_grp6) %in% df6$V2
-fwrite(smp_grp6,file="smp_grp6.vcf",quote = F, row.names = F,sep ="\t", eol = "\n")
-
 ```
 22. Prepare vcfs for filtering
 >*vcf_cleanup.R, Change chromosomes names in vcfs to 1,2, etc., add headers from snp vcfs and rewrite to ..._unfiltered.vcf*
 >*count variants*
-```
-grep -v '^#' snp_29_unfiltered.vcf | wc -l
-```
+
 >*change chromosome names in bed file to 1,2, etc.*
 
 23. Replace heterozygoes with NA in snp vcf files
@@ -716,23 +752,8 @@ grep -v '^#' snp_29_unfiltered.vcf | wc -l
 library(data.table)
 library(dplyr)
 
-snp29.unfiltered <- fread(input = "snp29_unfiltered.vcf")
 snp1.unfiltered <- fread(input = "snp1_unfiltered.vcf")
-snp6.unfiltered <- fread(input = "snp6_unfiltered.vcf")
 
-
-snp6 <- snp6.unfiltered %>%
-  mutate_all(~gsub("0/1", "./.", .))
-snp6 <- snp6 %>%
-  mutate_all(~gsub("1/0", "./.", .))
-snp6 <- snp6 %>%
-  mutate_all(~gsub("0\\|1", "./.", .))
-snp6 <- snp6 %>%
-  mutate_all(~gsub("1\\|0", "./.", .))
-snp6 <- snp6 %>%
-  mutate_all(~gsub("0\\|0", "0/0", .))
-snp6 <- snp6 %>%
-  mutate_all(~gsub("1\\|1", "1/1", .))
 
 snp1 <- snp1.unfiltered %>%
   mutate_all(~gsub("0/1", "./.", .))
@@ -747,99 +768,8 @@ snp1 <- snp1 %>%
 snp1 <- snp1 %>%
   mutate_all(~gsub("1\\|1", "1/1", .))
 
-snp29 <- snp29.unfiltered %>%
-  mutate_all(~gsub("0/1", "./.", .))
-snp29 <- snp29 %>%
-  mutate_all(~gsub("1/0", "./.", .))
-snp29 <- snp29 %>%
-  mutate_all(~gsub("0\\|1", "./.", .))
-snp29 <- snp29 %>%
-  mutate_all(~gsub("1\\|0", "./.", .))
-snp29 <- snp29 %>%
-  mutate_all(~gsub("0\\|0", "0/0", .))
-snp29 <- snp29 %>%
-  mutate_all(~gsub("1\\|1", "1/1", .))
 
 fwrite(snp1, file = "snp1_unfiltered_nohet.vcf", quote = F, eol = "\n", sep = "\t", row.names = F)
-fwrite(snp6, file = "snp6_unfiltered_nohet.vcf", quote = F, eol = "\n", sep = "\t", row.names = F)
-fwrite(snp29, file = "snp29_unfiltered_nohet.vcf", quote = F, eol = "\n", sep = "\t", row.names = F)
-
-```
-
-24. filter with vcftools and plink ---> see step 48 for all final filtering steps
-```
-### see step 48
-
-# filter max 20% NA, only gene body
-vcftools --vcf snp29_unfiltered_nohet.vcf --max-missing 0.8 --recode --bed gene2.bed --out snp29_na --recode-INFO-all
-vcftools --vcf snp1_unfiltered_nohet.vcf --max-missing 0.8 --recode --bed gene2.bed --out snp1_na --recode-INFO-all
-vcftools --vcf snp6_unfiltered_nohet.vcf --max-missing 0.8 --recode --bed gene2.bed --out snp6_na --recode-INFO-all
- 
-vcftools --vcf smp29_unfiltered.vcf --max-missing 0.8 --recode --bed gene2.bed --out smp29_na --recode-INFO-all
-vcftools --vcf smp1_unfiltered.vcf --max-missing 0.8 --recode --bed gene2.bed --out smp1_na --recode-INFO-all
-vcftools --vcf smp6_unfiltered.vcf --max-missing 0.8 --recode --bed gene2.bed --out smp6_na --recode-INFO-all
-
-vcftools --vcf dmr29_unfiltered.vcf --max-missing 0.8 --recode --bed gene2.bed --out dmr29_na --recode-INFO-all
-vcftools --vcf dmr1_unfiltered.vcf --max-missing 0.8 --recode --bed gene2.bed --out dmr1_na --recode-INFO-all
-vcftools --vcf dmr6_unfiltered.vcf --max-missing 0.8 --recode --bed gene2.bed --out dmr6_na --recode-INFO-all
-
-# count
-grep -v '^#' snp29_na.vcf | wc -l
-
-# filter MAF with plink --> generates binary fileset
-
-plink --vcf snp29_na.recode.vcf --maf 0.04 --make-bed --out ./plink/snp29_maf --set-missing-var-ids @:# --keep-allele-order
-plink --vcf snp1_na.recode.vcf --maf 0.04 --make-bed --out ./plink/snp1_maf --set-missing-var-ids @:# --keep-allele-order
-plink --vcf snp6_na.recode.vcf --maf 0.04 --make-bed --out ./plink/snp6_maf --set-missing-var-ids @:# --keep-allele-order
-
-plink --vcf smp29_na.recode.vcf --maf 0.04 --make-bed --out ./plink/smp29_maf --set-missing-var-ids @:# --keep-allele-order
-plink --vcf smp1_na.recode.vcf --maf 0.04 --make-bed --out ./plink/smp1_maf --set-missing-var-ids @:# --keep-allele-order
-plink --vcf smp6_na.recode.vcf --maf 0.04 --make-bed --out ./plink/smp6_maf --set-missing-var-ids @:# --keep-allele-order
-
-plink --vcf dmr29_na.recode.vcf --maf 0.04 --make-bed --out ./plink/dmr29_maf --set-missing-var-ids @:# --keep-allele-order
-plink --vcf dmr1_na.recode.vcf --maf 0.04 --make-bed --out ./plink/dmr1_maf --set-missing-var-ids @:# --keep-allele-order
-plink --vcf dmr6_na.recode.vcf --maf 0.04 --make-bed --out ./plink/dmr6_maf --set-missing-var-ids @:# --keep-allele-order
-
-
-# make vcfs from binary fileset
-
-plink --bfile ./plink/snp29_maf --recode vcf-iid -out ./plink/snp29_maf --keep-allele-order
-plink --bfile ./plink/snp1_maf --recode vcf-iid -out ./plink/snp1_maf --keep-allele-order
-plink --bfile ./plink/snp6_maf --recode vcf-iid -out ./plink/snp6_maf --keep-allele-order
-
-plink --bfile ./plink/smp29_maf --recode vcf-iid -out ./plink/smp29_maf --keep-allele-order
-plink --bfile ./plink/smp1_maf --recode vcf-iid -out ./plink/smp1_maf --keep-allele-order
-plink --bfile ./plink/smp6_maf --recode vcf-iid -out ./plink/smp6_maf --keep-allele-order
-
-plink --bfile ./plink/dmr29_maf --recode vcf-iid -out ./plink/dmr29_maf --keep-allele-order
-plink --bfile ./plink/dmr1_maf --recode vcf-iid -out ./plink/dmr1_maf --keep-allele-order
-plink --bfile ./plink/dmr6_maf --recode vcf-iid -out ./plink/dmr6_maf --keep-allele-order
-
-```
-25. calculate distance matrix and plot trees
-```
-# calculate distance matrix for tree
-/mnt/c/Users/Excellaptop/ubuntu/softwares/VCF2Dis-1.50/bin/VCF2Dis -InPut  ./plink/snp29_maf.vcf  -OutPut ./tree/snp29_dis.mat
-/mnt/c/Users/Excellaptop/ubuntu/softwares/VCF2Dis-1.50/bin/VCF2Dis -InPut  ./plink/smp29_maf.vcf  -OutPut ./tree/smp29_dis.mat
-/mnt/c/Users/Excellaptop/ubuntu/softwares/VCF2Dis-1.50/bin/VCF2Dis -InPut  ./plink/dmr29_maf.vcf  -OutPut ./tree/dmr29_dis.mat
-
-
-# http://www.atgc-montpellier.fr/fastme/
-# make trees in R
-
-tree.R
-```
-26. Calculate and plot LD decay
-```
-#/proj/popgen/a.ramesh/software/vcftools-vcftools-581c231/bin/vcftools --vcf smp1.2_gbm_maf10.vcf --out smp1.2_gbm_maf10 --freq
-#/proj/popgen/a.ramesh/software/vcftools-vcftools-581c231/bin/vcftools --vcf smp1.2_exon_nongbm_maf10.vcf --out smp1.2_exon_nongbm_maf10 --freq
-
-#/proj/popgen/a.ramesh/software/PopLDdecay/bin/PopLDdecay  -InVCF smp1.2_gbm_maf10.vcf -OutStat smp1.2_gbm_maf10_ld_decay -MaxDist 10 -OutType 3
-#python3 ld_bin.py smp1.2_gbm_maf10_ld_decay.LD.gz smp1.2_gbm_maf10_ld_decay.stat 3
-
-/proj/popgen/a.ramesh/software/vcftools-vcftools-581c231/bin/vcftools  --max-missing 0.9 --recode --vcf brachy_meth_var_invar_all.vcf --out brachy_meth_1.2 --maf 0.1  --keep group1.2
-/proj/popgen/a.ramesh/software/PopLDdecay/bin/PopLDdecay  -InVCF brachy_meth_1.2.recode.vcf -OutStat smp1.2_maf10_ld_decay -MaxDist 10 -OutType 3
-python3 ld_bin.py smp1.2_maf10_ld_decay.LD.gz smp1.2_maf10_ld_decay.stat 3
 
 ```
 
@@ -1077,17 +1007,12 @@ write.table(cytosine_count,file="cytosine_count_dmr.txt",row.names=F, col.names=
 bgzip -f smp1_maf.vcf
 tabix -f smp1_maf.vcf.gz
 
-bgzip -f smp6_maf.vcf
-tabix -f smp6_maf.vcf.gz
-
 
 # dmr positions
 cat dmr_pos.list | while read -r line ; do tabix smp1_maf.vcf.gz $line >./group1_smp/dmr_regions/$line.smp.vcf; done
-cat dmr_pos.list | while read -r line ; do tabix smp6_maf.vcf.gz $line >./group6_smp/dmr_regions/$line.smp.vcf; done
 
 # gene positions
 cat gene_pos.list | while read -r line ; do tabix smp1_maf.vcf.gz $line >./group1_smp/gene_regions/$line.smp.vcf; done
-cat gene_pos.list | while read -r line ; do tabix smp6_maf.vcf.gz $line >./group6_smp/gene_regions/$line.smp.vcf; done
 
 for file in *vcf ; do wc -l $file >>vcflengths_smp_dmr ; done
 for file in *vcf ; do wc -l $file >>vcflengths_smp_gene ; done
@@ -1155,54 +1080,6 @@ write.table(paste("rm ",merged4$interval,".input.txt",sep=""),file="bad_interval
 
 #############################################################
 
-####### GROUP 6
-
-###### DMR regions
-setwd("C:/Users/Excellaptop/Desktop/stats/smp/group6_smp/dmr_regions/")
-
-vcflengths_smp_dmr <- read.table(file="vcflengths_smp_dmr")
-vcflengths_smp_dmr$V2 <- gsub(".smp.vcf","",vcflengths_smp_dmr$V2)
-colnames(vcflengths_smp_dmr) <- c("numvar","interval")
-cytosine_count <- read.table(file="/Users/Excellaptop/Desktop/stats/smp/cytosine_count_dmr.txt")
-cytosine_count$V1 <- gsub(".fa","",cytosine_count$V1)
-cytosine_count$V1 <- gsub("", ":", cytosine_count$V1)
-colnames(cytosine_count) <- c("interval","numc")
-
-merged <- inner_join(cytosine_count,vcflengths_smp_dmr,by="interval")
-merged$prop <- merged$numvar/merged$numc
-merged1 <- merged[merged$numvar >= 3 & merged$prop > 0.05,]
-#merged2 <- merged[merged$prop > 0.05,]
-
-write.table(merged1,file="good_intervals",sep="\t",quote=F,row.names = F, col.names = F)
-
-# bad_intervals
-merged4 <- merged[!(merged$numvar >= 3 & merged$prop > 0.05),]
-write.table(paste("rm ",merged4$interval,".input.txt",sep=""),file="bad_intervals.sh",sep="\t",quote=F,row.names = F, col.names = F)
-
-
-
-
-###### GENE regions
-setwd("C:/Users/Excellaptop/Desktop/stats/smp/group6_smp/gene_regions/")
-
-vcflengths_smp_gene <- read.table(file="vcflengths_smp_gene")
-vcflengths_smp_gene$V2 <- gsub(".smp.vcf","",vcflengths_smp_gene$V2)
-colnames(vcflengths_smp_gene) <- c("numvar","interval")
-cytosine_count <- read.table(file="/Users/Excellaptop/Desktop/stats/smp/cytosine_count_genes.txt")
-cytosine_count$V1 <- gsub(".fa","",cytosine_count$V1)
-cytosine_count$V1 <- gsub("", ":", cytosine_count$V1)
-colnames(cytosine_count) <- c("interval","numc")
-
-merged <- inner_join(cytosine_count,vcflengths_smp_gene,by="interval")
-merged$prop <- merged$numvar/merged$numc
-merged1 <- merged[merged$numvar >= 3 & merged$prop > 0.05,]
-#merged2 <- merged[merged$prop > 0.05,]
-
-write.table(merged1,file="good_intervals",sep="\t",quote=F,row.names = F, col.names = F)
-
-# bad_intervals
-merged4 <- merged[!(merged$numvar >= 3 & merged$prop > 0.05),]
-write.table(paste("rm ",merged4$interval,".input.txt",sep=""),file="bad_intervals.sh",sep="\t",quote=F,row.names = F, col.names = F)
 ```
 32. For SMPs: Get alpha
 >*repeat for both groups and gene and dmr regions*
@@ -1264,29 +1141,6 @@ for(f in 1:nrow(list)){
   write.table(file_imputed, file = filename, sep = "\t", quote = F , col.names = F, row.names = F)
 }
 
-# group 6 dmr
-setwd("C:/Users/Excellaptop/Desktop/stats/smp/group6_smp/dmr_regions/impute")
-list <- read.table("length_list", header = FALSE)
-list$V1 <- gsub(":", "", list$V1)
-
-for(f in 1:nrow(list)){
-  file <- read.table(list[f,1], header = FALSE)
-  file_imputed <- impute(inputfile = file)
-  filename <- gsub("input.txt", "input.imputed.txt", list[f,1])
-  write.table(file_imputed, file = filename, sep = "\t", quote = F , col.names = F, row.names = F)
-}
-
-# group 6 gene
-setwd("C:/Users/Excellaptop/Desktop/stats/smp/group6_smp/gene_regions/impute")
-list <- read.table("length_list", header = FALSE)
-list$V1 <- gsub(":", "", list$V1)
-
-for(f in 1:nrow(list)){
-  file <- read.table(list[f,1], header = FALSE)
-  file_imputed <- impute(inputfile = file)
-  filename <- gsub("input.txt", "input.imputed.txt", list[f,1])
-  write.table(file_imputed, file = filename, sep = "\t", quote = F , col.names = F, row.names = F)
-}
 ```
 34. For SMPs: get Dm estimates for all groups and regions
 ```
@@ -1315,311 +1169,6 @@ cd impute/
 cat good_intervals_alpha |  while read -r value1 value2 value3 value4 value5 remainder ;  do perl ../Dm_test_new.pl -input $value1.input.imputed.txt -output $value1.Dm_group1_dmr.txt -length $value2 -alpha $value5  ; done
 ```
 
-35. filtering 10% maf
-```
-### subgroups
-# 10% filtering
-plink --vcf snp1_na.recode.vcf --maf 0.1 --make-bed --out ./snp1_maf10 --set-missing-var-ids @:# --keep-allele-order
-plink --vcf snp6_na.recode.vcf --maf 0.1 --make-bed --out ./snp6_maf10 --set-missing-var-ids @:# --keep-allele-order
-
-plink --vcf smp1_na.recode.vcf --maf 0.1 --make-bed --out ./smp1_maf10 --set-missing-var-ids @:# --keep-allele-order
-plink --vcf smp6_na.recode.vcf --maf 0.1 --make-bed --out ./smp6_maf10 --set-missing-var-ids @:# --keep-allele-order
-
-plink --vcf dmr1_na.recode.vcf --maf 0.1 --make-bed --out ./dmr1_maf10 --set-missing-var-ids @:# --keep-allele-order
-plink --vcf dmr6_na.recode.vcf --maf 0.1 --make-bed --out ./dmr6_maf10 --set-missing-var-ids @:# --keep-allele-order
-
-
-
-plink --bfile ./snp1_maf10 --recode vcf-iid -out ./snp1_maf10 --keep-allele-order
-plink --bfile ./snp6_maf10 --recode vcf-iid -out ./snp6_maf10 --keep-allele-order
-
-plink --bfile ./smp1_maf10 --recode vcf-iid -out ./smp1_maf10 --keep-allele-order
-plink --bfile ./smp6_maf10 --recode vcf-iid -out ./smp6_maf10 --keep-allele-order
-
-plink --bfile ./dmr1_maf10 --recode vcf-iid -out ./dmr1_maf10 --keep-allele-order
-plink --bfile ./dmr6_maf10 --recode vcf-iid -out ./dmr6_maf10 --keep-allele-order
-
-grep -v '^#' ./plink/snp29_maf.vcf | wc -l
-```
-36. get subgroup vcfs
-```
-plink --vcf snp1_na.recode.vcf --make-bed --out ./snp1_maf100 --set-missing-var-ids @:# --keep-allele-order
-plink --vcf smp1_na.recode.vcf --make-bed --out ./smp1_maf100 --set-missing-var-ids @:# --keep-allele-order
-plink --vcf dmr1_na.recode.vcf --make-bed --out ./dmr1_maf100 --set-missing-var-ids @:# --keep-allele-order
-
-plink --bfile ./snp1_maf100 --recode vcf-iid -out ./snp1_maf100 --keep-allele-order
-plink --bfile ./smp1_maf100 --recode vcf-iid -out ./smp1_maf100 --keep-allele-order
-plink --bfile ./dmr1_maf100 --recode vcf-iid -out ./dmr1_maf100 --keep-allele-order
-
-
-bcftools view -S pop1.1.txt snp1_maf100.vcf > snp1.1_na.recode.vcf
-bcftools view -S pop1.2.txt snp1_maf100.vcf > snp1.2_na.recode.vcf
-
-bcftools view -S pop1.1.txt smp1_maf100.vcf > smp1.1_na.recode.vcf
-bcftools view -S pop1.2.txt smp1_maf100.vcf > smp1.2_na.recode.vcf
-
-bcftools view -S pop1.1.txt dmr1_maf100.vcf > dmr1.1_na.recode.vcf
-bcftools view -S pop1.2.txt dmr1_maf100.vcf > dmr1.2_na.recode.vcf
-
-plink --vcf snp1.1_na.recode.vcf --maf 0.1 --make-bed --out ./snp1.1_maf10 --set-missing-var-ids @:# --keep-allele-order
-plink --vcf snp1.2_na.recode.vcf --maf 0.1 --make-bed --out ./snp1.2_maf10 --set-missing-var-ids @:# --keep-allele-order
-plink --vcf smp1.1_na.recode.vcf --maf 0.1 --make-bed --out ./smp1.1_maf10 --set-missing-var-ids @:# --keep-allele-order
-plink --vcf smp1.2_na.recode.vcf --maf 0.1 --make-bed --out ./smp1.2_maf10 --set-missing-var-ids @:# --keep-allele-order
-plink --vcf dmr1.1_na.recode.vcf --maf 0.1 --make-bed --out ./dmr1.1_maf10 --set-missing-var-ids @:# --keep-allele-order
-plink --vcf dmr1.2_na.recode.vcf --maf 0.1 --make-bed --out ./dmr1.2_maf10 --set-missing-var-ids @:# --keep-allele-order
-
-plink --bfile ./snp1.1_maf10 --recode vcf-iid -out ./snp1.1_maf10 --keep-allele-order
-plink --bfile ./snp1.2_maf10 --recode vcf-iid -out ./snp1.2_maf10 --keep-allele-order
-plink --bfile ./smp1.1_maf10 --recode vcf-iid -out ./smp1.1_maf10 --keep-allele-order
-plink --bfile ./smp1.2_maf10 --recode vcf-iid -out ./smp1.2_maf10 --keep-allele-order
-plink --bfile ./dmr1.1_maf10 --recode vcf-iid -out ./dmr1.1_maf10 --keep-allele-order
-plink --bfile ./dmr1.2_maf10 --recode vcf-iid -out ./dmr1.2_maf10 --keep-allele-order
-
-```
-
-37. Repeat steps to generate new SMP vcf
->*Repeat step 17 with lower threshold (>4)*
-```
-library(dplyr)
-library(ggplot2)
-
-covfile <- read.table(file="covfiles")
-contextfiles <- read.table(file="contextfiles")
-
-
-cov <- read.table(file=as.character(covfile$V1[1]), header=F)
-colnames(cov) <- c("chromosome", "position", "end.position", "methylation.percentage", "count.methylated", "count.unmethylated" )
-cov$ID <- paste(cov$chromosome,cov$position,sep = "-")
-print(cov$ID[1])
-
-context <- read.table(file=as.character(contextfiles$V1[1]),header=F)
-colnames(context) <- c("chromosome", "position", "strand", "count.methylated", "count.unmethylated", "C-context", "trinucleotide context")
-context$ID <- paste(context$chromosome,context$position,sep = "-")
-print(context$ID[1])
-
-cov_context <- inner_join(cov,context[c(3,6:8)],by="ID")
-dim(cov_context)
-cov_context$chromosome <- gsub("_N","N", gsub(gsub(".wgbs_bismark_hisat2.deduplicated.bismark.cov","",covfile$V1)[1],"",cov_context$chromosome))
-cov_context <- cov_context[cov_context$count.methylated + cov_context$count.unmethylated > 4, ]
-
-cov_context$ID <- paste(cov_context$chromosome,cov_context$position,sep = "-")
-cov_context$count.total <- cov_context$count.methylated + cov_context$count.unmethylated
-cov_context$pval <- 0
-noncoversionrate <- sum(cov_context[cov_context$chromosome %in% "NC_011032.1",]$count.methylated)/sum(cov_context[cov_context$chromosome %in% "NC_011032.1",]$count.total)
-
-print(noncoversionrate)
-
-rm(cov)
-rm(context)
-
-#cov_context <- cov_context[cov_context$count.total > 4,]
-
-b <- apply(cov_context[c(5,11)], 1, binom.test, p = noncoversionrate, alternative = c("greater"))
-cov_context$pval <- do.call(rbind,lapply(b,function(v){v$p.value}))
-dim(cov_context)
-
-rm(b)
-
-cov_context <- cov_context[c(1,2,7,8,9,12)]
-cov_context$fdr <- p.adjust(cov_context$pval,method = "fdr")
-cov_context$call <- "U"
-cov_context[cov_context$fdr < 0.01,]$call <- "M"
-cov_context <- cov_context[-c(6,7)]
-dim(cov_context)
-
-samplename <- gsub(".wgbs_bismark_hisat2.deduplicated.bismark.cov","",covfile[1,])
-colnames(cov_context)[ncol(cov_context)] <- samplename
-cov_context2 <- cov_context
-
-rm(cov_context)
-
-for (i in 2:nrow(covfile)){
-  covfile <- read.table(file="covfiles")
-  contextfiles <- read.table(file="contextfiles")
-  
-  cov <- read.table(file=as.character(covfile[i,]), header=F)
-  colnames(cov) <- c("chromosome", "position", "end.position", "methylation.percentage", "count.methylated", "count.unmethylated" )
-  cov$ID <- paste(cov$chromosome,cov$position,sep = "-")
-  print(cov$ID[1])
-
-  context <- read.table(file=as.character(contextfiles[i,]),header=F)
-  colnames(context) <- c("chromosome", "position", "strand", "count.methylated", "count.unmethylated", "C-context", "trinucleotide context")
-  context$ID <- paste(context$chromosome,context$position,sep = "-")
-  print(context$ID[1])
-  print(i)
-
-  cov_context <- inner_join(cov,context[c(3,6:8)],by="ID")
-  dim(cov_context)
-  cov_context$chromosome <- gsub("_N","N", gsub(gsub(".wgbs_bismark_hisat2.deduplicated.bismark.cov","",covfile$V1)[i],"",cov_context$chromosome))
-  cov_context <- cov_context[cov_context$count.methylated + cov_context$count.unmethylated > 4, ]
-  
-  cov_context$ID <- paste(cov_context$chromosome,cov_context$position,sep = "-")
-  cov_context$count.total <- cov_context$count.methylated + cov_context$count.unmethylated
-  cov_context$pval <- 0
-  noncoversionrate <- sum(cov_context[cov_context$chromosome %in% "NC_011032.1",]$count.methylated)/sum(cov_context[cov_context$chromosome %in% "NC_011032.1",]$count.total)
-  
-  print(noncoversionrate)
-
-  rm(cov)
-  rm(context)
-
-  #cov_context <- cov_context[cov_context$count.total > 4,]
-  
-  b <- apply(cov_context[c(5,11)],1,binom.test,p = noncoversionrate, alternative = c("greater"))
-  cov_context$pval <- do.call(rbind,lapply(b,function(v){v$p.value}))
-  dim(cov_context)
-
-  rm(b)
-
-  cov_context <- cov_context[c(1,2,7,8,9,12)]
-  cov_context$fdr <- p.adjust(cov_context$pval,method = "fdr")
-  cov_context$call <- "U"
-  cov_context[cov_context$fdr < 0.01,]$call <- "M"
-  cov_context <- cov_context[-c(6,7)]
-  dim(cov_context)
-
-  samplename <- gsub(".wgbs_bismark_hisat2.deduplicated.bismark.cov","",covfile[i,])
-  colnames(cov_context)[ncol(cov_context)] <- samplename
-  cov_context <- cov_context[c(3,6)]
-  cov_context2 <- full_join(cov_context2,cov_context,by="ID")
-  dim(cov_context2)
-  rm(cov_context)
-}
-
-#### write to file for further processing
-
-#cov_context2$chromosome <- gsub("-.*","",cov_context2$ID)
-#cov_context2$position   <- as.numeric(gsub(".*-","",cov_context2$ID))
-write.table(cov_context2,file="cov_context3_all_thresh4.txt",row.names = F)
-
-```
->*steps 18, 21*
-```
-library(dplyr)
-library(ggplot2)
-library(data.table)
-
-cov_context3 <- fread(file="cov_context3_all_thresh4.txt",header=T)
-na_count <- apply(cov_context3[,6:ncol(cov_context3)], 1, function(x) sum(is.na(x)))
-na_count <- na_count/ncol(cov_context3[,6:ncol(cov_context3)])
-cov_context3 <- cov_context3[na_count < 0.5,] # change to appropriate number
-cov_context4 <- cov_context3
-ploymorphic <- apply(cov_context3[,6:ncol(cov_context3)], 1, table)
-ploymorphic <- sapply(ploymorphic,length)
-cov_context3 <- cov_context3[ploymorphic > 1,]
-
-meta <- cov_context3[,1:3]
-colnames(meta) <- c("#CHROM","POS","ID")
-meta$REF <- "A"
-meta$ALT <- "T"
-meta$QUAL <- 4000
-meta$FILTER <- "PASS"
-meta$INFO <- "DP=1000"
-meta$FORMAT <- "GT"
-cov_context3 <- cov_context3[,-c(1:5)]
-cov_context3[cov_context3 == "U"] <- "0/0"
-cov_context3[cov_context3 == "M"] <- "1/1"
-cov_context3[is.na(cov_context3)] <- "./."
-fwrite(cbind(meta,cov_context3),file="brachy_meth.thresh4.vcf",quote = F, row.names = F,sep="\t")
-
-meta2 <- cov_context4[,1:3]
-colnames(meta2) <- c("#CHROM","POS","ID")
-meta2$REF <- "A"
-meta2$ALT <- "T"
-meta2$QUAL <- 4000
-meta2$FILTER <- "PASS"
-meta2$INFO <- "DP=1000"
-meta2$FORMAT <- "GT"
-cov_context4 <- cov_context4[,-c(1:5)]
-cov_context4[cov_context4 == "U"] <- "0/0"
-cov_context4[cov_context4 == "M"] <- "1/1"
-cov_context4[is.na(cov_context4)] <- "./."
-fwrite(cbind(meta2,cov_context4),file="brachy_meth_var_invar.thresh4.vcf",quote = F, row.names = F,sep="\t")
-
-################
-df1 <- fread("group1_names", header = F, drop = "V1")
-df6 <- fread("group6_names", header = F, drop = "V1")
-
-smp <- fread("brachy_meth.thresh4.vcf", header = T)
-smp_29 <- smp[,-11]
-fwrite(smp_29, file = "smp_29_thresh4.vcf", quote = F, row.names = F,sep ="\t", eol = "\n")
-
-colnames(smp_29) %in% df1$V2
-
-smp_grp1 <- smp_29[,-c(10:16)]
-colnames(smp_grp1) %in% df1$V2
-fwrite(smp_grp1,file="smp_grp1_thresh4.vcf",quote = F, row.names = F,sep ="\t", eol = "\n")
-
-smp_grp6 <- smp_29[,-c(17:38)]
-colnames(smp_grp6) %in% df6$V2
-fwrite(smp_grp6,file="smp_grp6_thresh4.vcf",quote = F, row.names = F,sep ="\t", eol = "\n")
-```
->*cleanup vcfs*
-```
-library(data.table)
-library(dplyr)
-
-# read in vcf files
-
-smp29 <- fread("smp_29_thresh4.vcf")
-smp1 <- fread("smp_grp1_thresh4.vcf")
-smp6 <- fread("smp_grp6_thresh4.vcf")
-
-
-# remove plastid
-smp29 <- dplyr::filter(smp29, `#CHROM` != "NC_011032.1")
-smp1 <- dplyr::filter(smp1, `#CHROM` != "NC_011032.1")
-smp6 <- dplyr::filter(smp6, `#CHROM` != "NC_011032.1")
-
-# change chromosome names to 1, 2, etc. in #CHROM and ID columns
-
-
-## smp
-smp29$`#CHROM` <- gsub("NC_016131.3", "1", smp29$`#CHROM`)
-smp29$`#CHROM` <- gsub("NC_016132.3", "2", smp29$`#CHROM`)
-smp29$`#CHROM` <- gsub("NC_016133.3", "3", smp29$`#CHROM`)
-smp29$`#CHROM` <- gsub("NC_016134.3", "4", smp29$`#CHROM`)
-smp29$`#CHROM` <- gsub("NC_016135.3", "5", smp29$`#CHROM`)
-smp29$ID <- gsub("NC_016131.3-", "1:", smp29$ID)
-smp29$ID <- gsub("NC_016132.3-", "2:", smp29$ID)
-smp29$ID <- gsub("NC_016133.3-", "3:", smp29$ID)
-smp29$ID <- gsub("NC_016134.3-", "4:", smp29$ID)
-smp29$ID <- gsub("NC_016135.3-", "5:", smp29$ID)
-
-smp1$`#CHROM` <- gsub("NC_016131.3", "1", smp1$`#CHROM`)
-smp1$`#CHROM` <- gsub("NC_016132.3", "2", smp1$`#CHROM`)
-smp1$`#CHROM` <- gsub("NC_016133.3", "3", smp1$`#CHROM`)
-smp1$`#CHROM` <- gsub("NC_016134.3", "4", smp1$`#CHROM`)
-smp1$`#CHROM` <- gsub("NC_016135.3", "5", smp1$`#CHROM`)
-smp1$ID <- gsub("NC_016131.3-", "1:", smp1$ID)
-smp1$ID <- gsub("NC_016132.3-", "2:", smp1$ID)
-smp1$ID <- gsub("NC_016133.3-", "3:", smp1$ID)
-smp1$ID <- gsub("NC_016134.3-", "4:", smp1$ID)
-smp1$ID <- gsub("NC_016135.3-", "5:", smp1$ID)
-
-
-smp6$`#CHROM` <- gsub("NC_016131.3", "1", smp6$`#CHROM`)
-smp6$`#CHROM` <- gsub("NC_016132.3", "2", smp6$`#CHROM`)
-smp6$`#CHROM` <- gsub("NC_016133.3", "3", smp6$`#CHROM`)
-smp6$`#CHROM` <- gsub("NC_016134.3", "4", smp6$`#CHROM`)
-smp6$`#CHROM` <- gsub("NC_016135.3", "5", smp6$`#CHROM`)
-smp6$ID <- gsub("NC_016131.3-", "1:", smp6$ID)
-smp6$ID <- gsub("NC_016132.3-", "2:", smp6$ID)
-smp6$ID <- gsub("NC_016133.3-", "3:", smp6$ID)
-smp6$ID <- gsub("NC_016134.3-", "4:", smp6$ID)
-smp6$ID <- gsub("NC_016135.3-", "5:", smp6$ID)
-
-
-
-# write to file again
-fwrite(smp29, file = "smp29_thresh4_unfiltered.vcf", quote = F, sep = "\t", eol = "\n")
-fwrite(smp1, file = "smp1_thresh4_unfiltered.vcf", quote = F, sep = "\t", eol = "\n")
-fwrite(smp6, file = "smp6_thresh4_unfiltered.vcf", quote = F, sep = "\t", eol = "\n")
-
-test <-fread("smp6_thresh4_unfiltered.vcf")
-
-## add header to vcf files
-```
 38. get .bed files for noncoding regions, gbM genes and exons
 >**
 ```
@@ -1644,261 +1193,133 @@ sed -e 's/\t/:/' -e  's/\t/-/' gbm_genes.bed >gbm_genes.list
 # change chromosome names to match vcfs -> gbm_genes2.bed (1, 2, 3, etc.) and gbm_genes3.bed (NC_016131, NC_016132, etc.)
 ```
 
+
 39. filtering of VCFs
 ```
-# filtering of vcfs for gBM SMP, gBM DMR and coding and noncoding SNPs, and invariants
+# remove some samples from group 1.1 to only analyse central samples of brachypodium
+# only samples BdTR1e, BdTR1h, BdTR1j, BdTR1k, BdTR1m, BdTR1n of group 1.1 are included
+
+cut --complement -f10,11,13,14 snp1_unfiltered_nohet.vcf | grep -v "^##" > snp1_central_unfiltered_nohet.vcf
+
 
 
 #### SNPs ######################################################################################################################################
+cut --complement -f10,11,13,14 snp1_unfiltered_nohet.vcf | grep -v "^##" > snp1_central_unfiltered_nohet.vcf
 
 # filter max 20% NA, only non coding SNP
-vcftools --vcf snp29_unfiltered_nohet.vcf --max-missing 0.8 --recode --bed non_gene2.bed --out ./snp/snp29_noncoding_na --recode-INFO-all
-vcftools --vcf snp1_unfiltered_nohet.vcf --max-missing 0.8 --recode --bed non_gene2.bed --out ./snp/snp1_noncoding_na --recode-INFO-all
-vcftools --vcf snp6_unfiltered_nohet.vcf --max-missing 0.8 --recode --bed non_gene2.bed --out ./snp/snp6_noncoding_na --recode-INFO-all 
-
-grep -v '^#' snp29_noncoding_na.recode.vcf | wc -l
+vcftools --vcf snp1_central_unfiltered_nohet.vcf --max-missing 0.8 --recode --bed non_gene2.bed --out ./snp/snp1_central_noncoding_na --recode-INFO-all
 
 
-plink --vcf snp29_noncoding_na.recode.vcf --maf 0.04 --make-bed --out ./snp29_noncoding_maf04 --set-missing-var-ids @:# --keep-allele-order
-plink --vcf snp1_noncoding_na.recode.vcf --maf 0.04 --make-bed --out ./snp1_noncoding_maf04 --set-missing-var-ids @:# --keep-allele-order
-plink --vcf snp6_noncoding_na.recode.vcf --maf 0.04 --make-bed --out ./snp6_noncoding_maf04 --set-missing-var-ids @:# --keep-allele-order
-
-plink --bfile ./snp29_noncoding_maf04 --recode vcf-iid -out ./snp29_noncoding_maf04 --keep-allele-order
-plink --bfile ./snp1_noncoding_maf04 --recode vcf-iid -out ./snp1_noncoding_maf04 --keep-allele-order
-plink --bfile ./snp6_noncoding_maf04 --recode vcf-iid -out ./snp6_noncoding_maf04 --keep-allele-order
+# maf 0.1
+plink --vcf snp1_central_noncoding_na.recode.vcf --maf 0.1 --make-bed --out ./snp1_central_noncoding_maf10 --set-missing-var-ids @:# --keep-allele-order
+plink --bfile ./snp1_central_noncoding_maf10 --recode vcf-iid -out ./snp1_central_noncoding_maf10 --keep-allele-order
 
 
 
 ### coding and non coding invariants
 
-vcftools --vcf snp29_invar_unfiltered_nohet.vcf --max-missing 0.8 --recode --bed non_gene3.bed --out ./snp/snp29_invar_noncoding_na --recode-INFO-all
-vcftools --vcf snp1_invar_unfiltered_nohet.vcf --max-missing 0.8 --recode --bed non_gene3.bed --out ./snp/snp1_invar_noncoding_na --recode-INFO-all
-vcftools --vcf snp6_invar_unfiltered_nohet.vcf --max-missing 0.8 --recode --bed non_gene3.bed --out ./snp/snp6_invar_noncoding_na --recode-INFO-all 
+cut --complement -f10,11,13,14 snp1_invar_unfiltered_nohet.vcf | grep -v "^##" > snp1_central_invar_unfiltered_nohet.vcf
 
 
-vcftools --vcf snp29_invar_unfiltered_nohet.vcf --max-missing 0.8 --recode --bed gbm_genes3.bed --out ./snp/snp29_invar_coding_na --recode-INFO-all
-vcftools --vcf snp1_invar_unfiltered_nohet.vcf --max-missing 0.8 --recode --bed gbm_genes3.bed --out ./snp/snp1_invar_coding_na --recode-INFO-all
-vcftools --vcf snp6_invar_unfiltered_nohet.vcf --max-missing 0.8 --recode --bed gbm_genes3.bed --out ./snp/snp6_invar_coding_na --recode-INFO-all 
+vcftools --vcf snp1_central_invar_unfiltered_nohet.vcf --max-missing 0.8 --recode --bed non_gene3.bed --out ./snp/snp1_central_invar_noncoding_na --recode-INFO-all
 
-
+vcftools --vcf snp1_central_invar_unfiltered_nohet.vcf --max-missing 0.8 --recode --bed gbm_genes3.bed --out ./snp/snp1_central_invar_coding_na --recode-INFO-all
 
 
 #### SMPs ####################################################################################################################################
+
+cut --complement -f10,11,13,14 smp1_thresh4_unfiltered.vcf | grep -v "^##" > smp1_central_thresh4_unfiltered.vcf
+mkdir smp
+
 # filter max 20% NA, gBM genes and all exons
 
-vcftools --vcf smp29_thresh4_unfiltered.vcf --max-missing 0.8 --recode --bed gbm_genes3.bed --out ./smp/smp29_gbm_na --recode-INFO-all
-vcftools --vcf smp1_thresh4_unfiltered.vcf --max-missing 0.8 --recode --bed gbm_genes3.bed --out ./smp/smp1_gbm_na --recode-INFO-all
-vcftools --vcf smp6_thresh4_unfiltered.vcf --max-missing 0.8 --recode --bed gbm_genes3.bed --out ./smp/smp6_gbm_na --recode-INFO-all
+#### gbm
+vcftools --vcf smp1_central_thresh4_unfiltered.vcf --max-missing 0.8 --recode --bed gbm_genes3.bed --out ./smp/smp1_central_gbm_na --recode-INFO-all
 
-vcftools --vcf smp29_thresh4_unfiltered.vcf --max-missing 0.8 --recode --bed exon_pos3.bed --out ./smp/smp29_exon_na --recode-INFO-all
-vcftools --vcf smp1_thresh4_unfiltered.vcf --max-missing 0.8 --recode --bed exon_pos3.bed --out ./smp/smp1_exon_na --recode-INFO-all
-vcftools --vcf smp6_thresh4_unfiltered.vcf --max-missing 0.8 --recode --bed exon_pos3.bed --out ./smp/smp6_exon_na --recode-INFO-all
+# change chromosome names to numbers
 
+cd smp/
 
-
-# change chromosome numbers
-plink --vcf smp29_gbm_na.recode.vcf --maf 0.04 --make-bed --out ./smp29_gbm_maf04 --set-missing-var-ids @:# --keep-allele-order
-plink --vcf smp1_gbm_na.recode.vcf --maf 0.04 --make-bed --out ./smp1_gbm_maf04 --set-missing-var-ids @:# --keep-allele-order
-plink --vcf smp6_gbm_na.recode.vcf --maf 0.04 --make-bed --out ./smp6_gbm_maf04 --set-missing-var-ids @:# --keep-allele-order
-plink --bfile ./smp29_gbm_maf04 --recode vcf-iid -out ./smp29_gbm_maf04 --keep-allele-order
-plink --bfile ./smp1_gbm_maf04 --recode vcf-iid -out ./smp1_gbm_maf04 --keep-allele-order
-plink --bfile ./smp6_gbm_maf04 --recode vcf-iid -out ./smp6_gbm_maf04 --keep-allele-order
+# maf 0.1
+plink --vcf smp1_central_gbm_na.recode.vcf --maf 0.1 --make-bed --out ./smp1_central_gbm_maf10 --set-missing-var-ids @:# --keep-allele-order
+plink --bfile ./smp1_central_gbm_maf10 --recode vcf-iid -out ./smp1_central_gbm_maf10 --keep-allele-order
 
 
-plink --vcf smp29_exon_na.recode.vcf --maf 0.04 --make-bed --out ./smp29_exon_maf04 --set-missing-var-ids @:# --keep-allele-order
-plink --vcf smp1_exon_na.recode.vcf --maf 0.04 --make-bed --out ./smp1_exon_maf04 --set-missing-var-ids @:# --keep-allele-order
-plink --vcf smp6_exon_na.recode.vcf --maf 0.04 --make-bed --out ./smp6_exon_maf04 --set-missing-var-ids @:# --keep-allele-order
-plink --bfile ./smp29_exon_maf04 --recode vcf-iid -out ./smp29_exon_maf04 --keep-allele-order
-plink --bfile ./smp1_exon_maf04 --recode vcf-iid -out ./smp1_exon_maf04 --keep-allele-order
-plink --bfile ./smp6_exon_maf04 --recode vcf-iid -out ./smp6_exon_maf04 --keep-allele-order
+### exons
+vcftools --vcf smp1_central_thresh4_unfiltered.vcf --max-missing 0.8 --recode --bed exon_pos3.bed --out ./smp/smp1_central_exon_na --recode-INFO-all
 
+# change chromosome names to numbers
+
+cd smp/
+
+# maf 0.1
+plink --vcf smp1_central_exon_na.recode.vcf --maf 0.1 --make-bed --out ./smp1_central_exon_maf10 --set-missing-var-ids @:# --keep-allele-order
+plink --bfile ./smp1_central_exon_maf10 --recode vcf-iid -out ./smp1_central_exon_maf10 --keep-allele-order
 
 ## get non-gbM exons
 from exon filtered vcfs
+cd smp/
+mkdir non
+# copy gbm_genes2.bed to smp/
 
-vcftools --vcf smp29_exon_na.recode.vcf --recode --exclude-bed gbm_genes2.bed --out ./non/smp29_exon_nongbm --recode-INFO-all
-vcftools --vcf smp1_exon_na.recode.vcf --recode --exclude-bed gbm_genes2.bed --out ./non/smp1_exon_nongbm --recode-INFO-all
-vcftools --vcf smp6_exon_na.recode.vcf --recode --exclude-bed gbm_genes2.bed --out ./non/smp6_exon_nongbm --recode-INFO-all
+vcftools --vcf smp1_central_exon_na.recode.vcf --recode --exclude-bed gbm_genes2.bed --out ./non/smp1_central_exon_nongbm --recode-INFO-all
 
+cd non/
+# maf 0.04
+plink --vcf smp1_central_exon_nongbm.recode.vcf --maf 0.04 --make-bed --out ./smp1_central_exon_nongbm_maf04 --set-missing-var-ids @:# --keep-allele-order
+plink --bfile ./smp1_central_exon_nongbm_maf04 --recode vcf-iid -out ./smp1_central_exon_nongbm_maf04 --keep-allele-order
 
-plink --vcf smp29_exon_nongbm.recode.vcf --maf 0.04 --make-bed --out ./smp29_exon_nongbm_maf04 --set-missing-var-ids @:# --keep-allele-order
-plink --vcf smp1_exon_nongbm.recode.vcf --maf 0.04 --make-bed --out ./smp1_exon_nongbm_maf04 --set-missing-var-ids @:# --keep-allele-order
-plink --vcf smp6_exon_nongbm.recode.vcf --maf 0.04 --make-bed --out ./smp6_exon_nongbm_maf04 --set-missing-var-ids @:# --keep-allele-order
-plink --bfile ./smp29_exon_nongbm_maf04 --recode vcf-iid -out ./smp29_exon_nongbm_maf04 --keep-allele-order
-plink --bfile ./smp1_exon_nongbm_maf04 --recode vcf-iid -out ./smp1_exon_nongbm_maf04 --keep-allele-order
-plink --bfile ./smp6_exon_nongbm_maf04 --recode vcf-iid -out ./smp6_exon_nongbm_maf04 --keep-allele-order
-
-
-
-
-#### DMRs ####################################################################################################################################
-
-vcftools --vcf bd_dmrs_dip29.vcf --max-missing 0.8 --recode --bed gbm_genes2.bed --out ./dmr/dmr29_gbm_na --recode-INFO-all
-vcftools --vcf bd_dmrs_dip1.vcf --max-missing 0.8 --recode --bed gbm_genes2.bed --out ./dmr/dmr1_gbm_na --recode-INFO-all
-vcftools --vcf bd_dmrs_dip6.vcf --max-missing 0.8 --recode --bed gbm_genes2.bed --out ./dmr/dmr6_gbm_na --recode-INFO-all
+# maf 0.1
+plink --vcf smp1_central_exon_nongbm.recode.vcf --maf 0.1 --make-bed --out ./smp1_central_exon_nongbm_maf10 --set-missing-var-ids @:# --keep-allele-order
+plink --bfile ./smp1_central_exon_nongbm_maf10 --recode vcf-iid -out ./smp1_central_exon_nongbm_maf10 --keep-allele-order
 
 
-plink --vcf dmr29_gbm_na.recode.vcf --maf 0.04 --make-bed --out ./dmr29_gbm_maf04 --set-missing-var-ids @:# --keep-allele-order
-plink --vcf dmr1_gbm_na.recode.vcf --maf 0.04 --make-bed --out ./dmr1_gbm_maf04 --set-missing-var-ids @:# --keep-allele-order
-plink --vcf dmr6_gbm_na.recode.vcf --maf 0.04 --make-bed --out ./dmr6_gbm_maf04 --set-missing-var-ids @:# --keep-allele-order
 
-plink --bfile ./dmr29_gbm_maf04 --recode vcf-iid -out ./dmr29_gbm_maf04 --keep-allele-order
-plink --bfile ./dmr1_gbm_maf04 --recode vcf-iid -out ./dmr1_gbm_maf04 --keep-allele-order
-plink --bfile ./dmr6_gbm_maf04 --recode vcf-iid -out ./dmr6_gbm_maf04 --keep-allele-order
+
+#### DMRs ###################################################################################################################################
+
+
+cut --complement -f10,11,13,14 bd_dmrs_dip1.vcf | grep -v "^##" > bd_dmrs_dip1_central.vcf
+mkdir dmr
+
+# filter max 20% NA, gBM genes
+
+vcftools --vcf bd_dmrs_dip1_central.vcf --max-missing 0.8 --recode --bed gbm_genes2.bed --out ./dmr/dmr1_central_gbm_na --recode-INFO-all
+
+cd dmr/
+
+# maf 0.10
+plink --vcf dmr1_central_gbm_na.recode.vcf --maf 0.1 --make-bed --out ./dmr1_central_gbm_maf10 --set-missing-var-ids @:# --keep-allele-order
+plink --bfile ./dmr1_central_gbm_maf10 --recode vcf-iid -out ./dmr1_central_gbm_maf10 --keep-allele-order
+
 
 ## get non-gbM dmrs
-vcftools --vcf bd_dmrs_dip29.vcf --max-missing 0.8 --recode --bed exon_pos2.bed --out ./dmr/dmr29_exon_na --recode-INFO-all
-vcftools --vcf bd_dmrs_dip1.vcf --max-missing 0.8 --recode --bed exon_pos2.bed --out ./dmr/dmr1_exon_na --recode-INFO-all
-vcftools --vcf bd_dmrs_dip6.vcf --max-missing 0.8 --recode --bed exon_pos2.bed --out ./dmr/dmr6_exon_na --recode-INFO-all
+vcftools --vcf bd_dmrs_dip1_central.vcf --max-missing 0.8 --recode --bed exon_pos2.bed --out ./dmr/dmr1_central_exon_na --recode-INFO-all
 
 #from exon filtered dmr vcfs
-vcftools --vcf dmr29_exon_na.recode.vcf --recode --exclude-bed gbm_genes2.bed --out ./non/dmr29_exon_nongbm --recode-INFO-all
-vcftools --vcf dmr1_exon_na.recode.vcf --recode --exclude-bed gbm_genes2.bed --out ./non/dmr1_exon_nongbm --recode-INFO-all
-vcftools --vcf dmr6_exon_na.recode.vcf --recode --exclude-bed gbm_genes2.bed --out ./non/dmr6_exon_nongbm --recode-INFO-all
+mkdir non
+# cp gbm_genes2.bed to dmr/
+vcftools --vcf dmr1_central_exon_na.recode.vcf --recode --exclude-bed gbm_genes2.bed --out ./non/dmr1_central_exon_nongbm --recode-INFO-all
+cd non/
 
+# maf 0.1
+plink --vcf dmr1_central_exon_nongbm.recode.vcf --maf 0.1 --make-bed --out ./dmr1_central_exon_nongbm_maf10 --set-missing-var-ids @:# --keep-allele-order
+plink --bfile ./dmr1_central_exon_nongbm_maf10 --recode vcf-iid -out ./dmr1_central_exon_nongbm_maf10 --keep-allele-order
 
-plink --vcf dmr29_exon_nongbm.recode.vcf --maf 0.04 --make-bed --out ./dmr29_exon_nongbm_maf04 --set-missing-var-ids @:# --keep-allele-order
-plink --vcf dmr1_exon_nongbm.recode.vcf --maf 0.04 --make-bed --out ./dmr1_exon_nongbm_maf04 --set-missing-var-ids @:# --keep-allele-order
-plink --vcf dmr6_exon_nongbm.recode.vcf --maf 0.04 --make-bed --out ./dmr6_exon_nongbm_maf04 --set-missing-var-ids @:# --keep-allele-order
-plink --bfile ./dmr29_exon_nongbm_maf04 --recode vcf-iid -out ./dmr29_exon_nongbm_maf04 --keep-allele-order
-plink --bfile ./dmr1_exon_nongbm_maf04 --recode vcf-iid -out ./dmr1_exon_nongbm_maf04 --keep-allele-order
-plink --bfile ./dmr6_exon_nongbm_maf04 --recode vcf-iid -out ./dmr6_exon_nongbm_maf04 --keep-allele-order
+# DMR all exons
+../
 
-# DMR exons
-plink --vcf dmr29_exon_na.recode.vcf --maf 0.04 --make-bed --out ./dmr29_exon_maf04 --set-missing-var-ids @:# --keep-allele-order
-plink --vcf dmr1_exon_na.recode.vcf --maf 0.04 --make-bed --out ./dmr1_exon_maf04 --set-missing-var-ids @:# --keep-allele-order
-plink --vcf dmr6_exon_na.recode.vcf --maf 0.04 --make-bed --out ./dmr6_exon_maf04 --set-missing-var-ids @:# --keep-allele-order
-plink --bfile ./dmr29_exon_maf04 --recode vcf-iid -out ./dmr29_exon_maf04 --keep-allele-order
-plink --bfile ./dmr1_exon_maf04 --recode vcf-iid -out ./dmr1_exon_maf04 --keep-allele-order
-plink --bfile ./dmr6_exon_maf04 --recode vcf-iid -out ./dmr6_exon_maf04 --keep-allele-order
+# maf 0.1
+plink --vcf dmr1_central_exon_na.recode.vcf --maf 0.1 --make-bed --out ./dmr1_central_exon_maf10 --set-missing-var-ids @:# --keep-allele-order
+plink --bfile ./dmr1_central_exon_maf10 --recode vcf-iid -out ./dmr1_central_exon_maf10 --keep-allele-order
 
+# Distance matrix for trees
+mkdir distance_matrix
+/mnt/c/Users/Andreas/ubuntu/softwares/VCF2Dis-1.50/bin/VCF2Dis -InPut  ./smp/smp1_central_gbm_maf10.vcf  -OutPut ./distance_matrix/smp1_central_gbm_dis.mat
+/mnt/c/Users/Andreas/ubuntu/softwares/VCF2Dis-1.50/bin/VCF2Dis -InPut  ./dmr/dmr1_central_gbm_maf10.vcf  -OutPut ./distance_matrix/dmr1_central_gbm_dis.mat
 
-
-#### subgroups ####################################################################################################################################
-
-# 10% filtering
-
-plink --vcf snp1_noncoding_na.recode.vcf --maf 0.1 --make-bed --out ./snp1_noncoding_maf10 --set-missing-var-ids @:# --keep-allele-order
-plink --vcf snp6_noncoding_na.recode.vcf --maf 0.1 --make-bed --out ./snp6_noncoding_maf10 --set-missing-var-ids @:# --keep-allele-order
-plink --bfile ./snp1_noncoding_maf10 --recode vcf-iid -out ./snp1_noncoding_maf10 --keep-allele-order
-plink --bfile ./snp6_noncoding_maf10 --recode vcf-iid -out ./snp6_noncoding_maf10 --keep-allele-order
-
-
-plink --vcf smp1_gbm_na.recode.vcf --maf 0.1 --make-bed --out ./smp1_gbm_maf10 --set-missing-var-ids @:# --keep-allele-order
-plink --vcf smp6_gbm_na.recode.vcf --maf 0.1 --make-bed --out ./smp6_gbm_maf10 --set-missing-var-ids @:# --keep-allele-order
-plink --bfile ./smp1_gbm_maf10 --recode vcf-iid -out ./smp1_gbm_maf10 --keep-allele-order
-plink --bfile ./smp6_gbm_maf10 --recode vcf-iid -out ./smp6_gbm_maf10 --keep-allele-order
-
-
-plink --vcf smp1_exon_na.recode.vcf --maf 0.1 --make-bed --out ./smp1_exon_maf10 --set-missing-var-ids @:# --keep-allele-order
-plink --vcf smp6_exon_na.recode.vcf --maf 0.1 --make-bed --out ./smp6_exon_maf10 --set-missing-var-ids @:# --keep-allele-order
-plink --bfile ./smp1_exon_maf10 --recode vcf-iid -out ./smp1_exon_maf10 --keep-allele-order
-plink --bfile ./smp6_exon_maf10 --recode vcf-iid -out ./smp6_exon_maf10 --keep-allele-order
-
-
-
-plink --vcf dmr1_gbm_na.recode.vcf --maf 0.1 --make-bed --out ./dmr1_gbm_maf10 --set-missing-var-ids @:# --keep-allele-order
-plink --vcf dmr6_gbm_na.recode.vcf --maf 0.1 --make-bed --out ./dmr6_gbm_maf10 --set-missing-var-ids @:# --keep-allele-order
-plink --bfile ./dmr1_gbm_maf10 --recode vcf-iid -out ./dmr1_gbm_maf10 --keep-allele-order
-plink --bfile ./dmr6_gbm_maf10 --recode vcf-iid -out ./dmr6_gbm_maf10 --keep-allele-order
-
-
-plink --vcf smp1_exon_nongbm.recode.vcf --maf 0.1 --make-bed --out ./smp1_exon_nongbm_maf10 --set-missing-var-ids @:# --keep-allele-order
-plink --vcf smp6_exon_nongbm.recode.vcf --maf 0.1 --make-bed --out ./smp6_exon_nongbm_maf10 --set-missing-var-ids @:# --keep-allele-order
-plink --bfile ./smp1_exon_nongbm_maf10 --recode vcf-iid -out ./smp1_exon_nongbm_maf10 --keep-allele-order
-plink --bfile ./smp6_exon_nongbm_maf10 --recode vcf-iid -out ./smp6_exon_nongbm_maf10 --keep-allele-order
-
-
-plink --vcf dmr1_exon_na.recode.vcf --maf 0.1 --make-bed --out ./dmr1_exon_maf10 --set-missing-var-ids @:# --keep-allele-order
-plink --vcf dmr6_exon_na.recode.vcf --maf 0.1 --make-bed --out ./dmr6_exon_maf10 --set-missing-var-ids @:# --keep-allele-order
-plink --bfile ./dmr1_exon_maf10 --recode vcf-iid -out ./dmr1_exon_maf10 --keep-allele-order
-plink --bfile ./dmr6_exon_maf10 --recode vcf-iid -out ./dmr6_exon_maf10 --keep-allele-order
-
-
-plink --vcf dmr1_exon_nongbm.recode.vcf --maf 0.1 --make-bed --out ./dmr1_exon_nongbm_maf10 --set-missing-var-ids @:# --keep-allele-order
-plink --vcf dmr6_exon_nongbm.recode.vcf --maf 0.1 --make-bed --out ./dmr6_exon_nongbm_maf10 --set-missing-var-ids @:# --keep-allele-order
-plink --bfile ./dmr1_exon_nongbm_maf10 --recode vcf-iid -out ./dmr1_exon_nongbm_maf10 --keep-allele-order
-plink --bfile ./dmr6_exon_nongbm_maf10 --recode vcf-iid -out ./dmr6_exon_nongbm_maf10 --keep-allele-order
-
-
-### make subgroups
-plink --vcf snp1_noncoding_na.recode.vcf --make-bed --out ./snp1_noncoding_maf100 --set-missing-var-ids @:# --keep-allele-order
-plink --bfile ./snp1_noncoding_maf100 --recode vcf-iid -out ./snp1_noncoding_maf100 --keep-allele-order
-bcftools view -S pop1.1.txt snp1_noncoding_maf100.vcf > snp1.1_noncoding_na.recode.vcf
-bcftools view -S pop1.2.txt snp1_noncoding_maf100.vcf > snp1.2_noncoding_na.recode.vcf
-plink --vcf snp1.1_noncoding_na.recode.vcf --maf 0.1 --make-bed --out ./snp1.1_noncoding_maf10 --set-missing-var-ids @:# --keep-allele-order
-plink --vcf snp1.2_noncoding_na.recode.vcf --maf 0.1 --make-bed --out ./snp1.2_noncoding_maf10 --set-missing-var-ids @:# --keep-allele-order
-plink --bfile ./snp1.1_noncoding_maf10 --recode vcf-iid -out ./snp1.1_noncoding_maf10 --keep-allele-order
-plink --bfile ./snp1.2_noncoding_maf10 --recode vcf-iid -out ./snp1.2_noncoding_maf10 --keep-allele-order
-
-
-plink --vcf smp1_gbm_na.recode.vcf --make-bed --out ./smp1_gbm_maf100 --set-missing-var-ids @:# --keep-allele-order
-plink --bfile ./smp1_gbm_maf100 --recode vcf-iid -out ./smp1_gbm_maf100 --keep-allele-order
-bcftools view -S pop1.1.txt smp1_gbm_maf100.vcf > smp1.1_gbm_na.recode.vcf
-bcftools view -S pop1.2.txt smp1_gbm_maf100.vcf > smp1.2_gbm_na.recode.vcf
-plink --vcf smp1.1_gbm_na.recode.vcf --maf 0.1 --make-bed --out ./smp1.1_gbm_maf10 --set-missing-var-ids @:# --keep-allele-order
-plink --vcf smp1.2_gbm_na.recode.vcf --maf 0.1 --make-bed --out ./smp1.2_gbm_maf10 --set-missing-var-ids @:# --keep-allele-order
-plink --bfile ./smp1.1_gbm_maf10 --recode vcf-iid -out ./smp1.1_gbm_maf10 --keep-allele-order
-plink --bfile ./smp1.2_gbm_maf10 --recode vcf-iid -out ./smp1.2_gbm_maf10 --keep-allele-order
-
-
-plink --vcf dmr1_gbm_na.recode.vcf --make-bed --out ./dmr1_gbm_maf100 --set-missing-var-ids @:# --keep-allele-order
-plink --bfile ./dmr1_gbm_maf100 --recode vcf-iid -out ./dmr1_gbm_maf100 --keep-allele-order
-bcftools view -S pop1.1.txt dmr1_gbm_maf100.vcf > dmr1.1_gbm_na.recode.vcf
-bcftools view -S pop1.2.txt dmr1_gbm_maf100.vcf > dmr1.2_gbm_na.recode.vcf
-plink --vcf dmr1.1_gbm_na.recode.vcf --maf 0.1 --make-bed --out ./dmr1.1_gbm_maf10 --set-missing-var-ids @:# --keep-allele-order
-plink --vcf dmr1.2_gbm_na.recode.vcf --maf 0.1 --make-bed --out ./dmr1.2_gbm_maf10 --set-missing-var-ids @:# --keep-allele-order
-plink --bfile ./dmr1.1_gbm_maf10 --recode vcf-iid -out ./dmr1.1_gbm_maf10 --keep-allele-order
-plink --bfile ./dmr1.2_gbm_maf10 --recode vcf-iid -out ./dmr1.2_gbm_maf10 --keep-allele-order
-
-
-# exons
-plink --vcf smp1_exon_na.recode.vcf --make-bed --out ./smp1_exon_maf100 --set-missing-var-ids @:# --keep-allele-order
-plink --bfile ./smp1_exon_maf100 --recode vcf-iid -out ./smp1_exon_maf100 --keep-allele-order
-bcftools view -S pop1.1.txt smp1_exon_maf100.vcf > smp1.1_exon_na.recode.vcf
-bcftools view -S pop1.2.txt smp1_exon_maf100.vcf > smp1.2_exon_na.recode.vcf
-plink --vcf smp1.1_exon_na.recode.vcf --maf 0.1 --make-bed --out ./smp1.1_exon_maf10 --set-missing-var-ids @:# --keep-allele-order
-plink --vcf smp1.2_exon_na.recode.vcf --maf 0.1 --make-bed --out ./smp1.2_exon_maf10 --set-missing-var-ids @:# --keep-allele-order
-plink --bfile ./smp1.1_exon_maf10 --recode vcf-iid -out ./smp1.1_exon_maf10 --keep-allele-order
-plink --bfile ./smp1.2_exon_maf10 --recode vcf-iid -out ./smp1.2_exon_maf10 --keep-allele-order
-
-
-plink --vcf dmr1_exon_na.recode.vcf --make-bed --out ./dmr1_exon_maf100 --set-missing-var-ids @:# --keep-allele-order
-plink --bfile ./dmr1_exon_maf100 --recode vcf-iid -out ./dmr1_exon_maf100 --keep-allele-order
-bcftools view -S pop1.1.txt dmr1_exon_maf100.vcf > dmr1.1_exon_na.recode.vcf
-bcftools view -S pop1.2.txt dmr1_exon_maf100.vcf > dmr1.2_exon_na.recode.vcf
-plink --vcf dmr1.1_exon_na.recode.vcf --maf 0.1 --make-bed --out ./dmr1.1_exon_maf10 --set-missing-var-ids @:# --keep-allele-order
-plink --vcf dmr1.2_exon_na.recode.vcf --maf 0.1 --make-bed --out ./dmr1.2_exon_maf10 --set-missing-var-ids @:# --keep-allele-order
-plink --bfile ./dmr1.1_exon_maf10 --recode vcf-iid -out ./dmr1.1_exon_maf10 --keep-allele-order
-plink --bfile ./dmr1.2_exon_maf10 --recode vcf-iid -out ./dmr1.2_exon_maf10 --keep-allele-order
-
-# exons non gbm
-
-plink --vcf smp1_exon_nongbm.recode.vcf --make-bed --out ./smp1_exon_nongbm_maf100 --set-missing-var-ids @:# --keep-allele-order
-plink --bfile ./smp1_exon_nongbm_maf100 --recode vcf-iid -out ./smp1_exon_nongbm_maf100 --keep-allele-order
-bcftools view -S pop1.1.txt smp1_exon_nongbm_maf100.vcf > smp1.1_exon_nongbm.recode.vcf
-bcftools view -S pop1.2.txt smp1_exon_nongbm_maf100.vcf > smp1.2_exon_nongbm.recode.vcf
-plink --vcf smp1.1_exon_nongbm.recode.vcf --maf 0.1 --make-bed --out ./smp1.1_exon_nongbm_maf10 --set-missing-var-ids @:# --keep-allele-order
-plink --vcf smp1.2_exon_nongbm.recode.vcf --maf 0.1 --make-bed --out ./smp1.2_exon_nongbm_maf10 --set-missing-var-ids @:# --keep-allele-order
-plink --bfile ./smp1.1_exon_nongbm_maf10 --recode vcf-iid -out ./smp1.1_exon_nongbm_maf10 --keep-allele-order
-plink --bfile ./smp1.2_exon_nongbm_maf10 --recode vcf-iid -out ./smp1.2_exon_nongbm_maf10 --keep-allele-order
-
-plink --vcf dmr1_exon_nongbm.recode.vcf --make-bed --out ./dmr1_exon_nongbm_maf100 --set-missing-var-ids @:# --keep-allele-order
-plink --bfile ./dmr1_exon_nongbm_maf100 --recode vcf-iid -out ./dmr1_exon_nongbm_maf100 --keep-allele-order
-bcftools view -S pop1.1.txt dmr1_exon_nongbm_maf100.vcf > dmr1.1_exon_nongbm.recode.vcf
-bcftools view -S pop1.2.txt dmr1_exon_nongbm_maf100.vcf > dmr1.2_exon_nongbm.recode.vcf
-plink --vcf dmr1.1_exon_nongbm.recode.vcf --maf 0.1 --make-bed --out ./dmr1.1_exon_nongbm_maf10 --set-missing-var-ids @:# --keep-allele-order
-plink --vcf dmr1.2_exon_nongbm.recode.vcf --maf 0.1 --make-bed --out ./dmr1.2_exon_nongbm_maf10 --set-missing-var-ids @:# --keep-allele-order
-plink --bfile ./dmr1.1_exon_nongbm_maf10 --recode vcf-iid -out ./dmr1.1_exon_nongbm_maf10 --keep-allele-order
-plink --bfile ./dmr1.2_exon_nongbm_maf10 --recode vcf-iid -out ./dmr1.2_exon_nongbm_maf10 --keep-allele-order
-
-
-#############################################################################
-
-# Distance matrix
-
-/mnt/c/Users/Andreas/ubuntu/softwares/VCF2Dis-1.50/bin/VCF2Dis -InPut  ./smp/smp29_gbm_maf04.vcf  -OutPut ./distance_matrix/smp29_gbm_dis.mat
-/mnt/c/Users/Andreas/ubuntu/softwares/VCF2Dis-1.50/bin/VCF2Dis -InPut  ./dmr/dmr29_gbm_maf04.vcf  -OutPut ./distance_matrix/dmr29_gbm_dis.mat
+# http://www.atgc-montpellier.fr/fastme/
+#Brachy_tree.R
 
 ```
 
@@ -1946,9 +1367,6 @@ fwrite(results, "cytosine_count_exons.txt", sep = "\t", col.names = FALSE, quote
 bgzip -f smp1_exon_maf04.vcf
 tabix -f smp1_exon_maf04.vcf.gz
 
-bgzip -f smp6_exon_maf04.vcf
-tabix -f smp6_exon_maf04.vcf.gz
-
 bgzip -f smp1.1_exon_maf10.vcf
 tabix -f smp1.1_exon_maf10.vcf.gz
 
@@ -1958,8 +1376,6 @@ tabix -f smp1.2_exon_maf10.vcf.gz
 
 
 cat exons2.list | while read -r line ; do tabix smp1_exon_maf04.vcf.gz $line >./group1/exons/$line.smp.vcf; done
-cat exons2.list | while read -r line ; do tabix smp6_exon_maf04.vcf.gz $line >./group6/exons/$line.smp.vcf; done
-
 cat exons2.list | while read -r line ; do tabix smp1.1_exon_maf10.vcf.gz $line >./group1.1/exons/$line.smp.vcf; done
 cat exons2.list | while read -r line ; do tabix smp1.2_exon_maf10.vcf.gz $line >./group1.2/exons/$line.smp.vcf; done
 
@@ -1991,7 +1407,7 @@ write.table(merged2,file="good_intervals",sep="\t",quote=F,row.names = F, col.na
 merged4 <- merged[!(merged$numvar >= 3 & merged$prop > 0.05),]
 write.table(paste("rm ",merged4$interval,".input.txt",sep=""),file="bad_intervals.sh",sep="\t",quote=F,row.names = F, col.names = F)
 
-## Repeat for groups 6, 1.1 and 1.2 with according vcf files
+## Repeat for 1.1 and 1.2 with according vcf files
 ```
 >*remove bad intervals and alpha estimation*
 ```
@@ -2111,4 +1527,3 @@ cat chrlist | while read line; do /proj/popgen/a.ramesh/software/msmc-tools/gene
 Rscript multihetsep_combined.R
 cd ../
 ```
-
